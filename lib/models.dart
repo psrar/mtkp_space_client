@@ -111,6 +111,37 @@ class Month {
     }
   }
 
+  int get num {
+    switch (this) {
+      case Month.january:
+        return 1;
+      case Month.february:
+        return 2;
+      case Month.march:
+        return 3;
+      case Month.april:
+        return 4;
+      case Month.may:
+        return 5;
+      case Month.june:
+        return 6;
+      case Month.july:
+        return 7;
+      case Month.august:
+        return 8;
+      case Month.september:
+        return 9;
+      case Month.october:
+        return 10;
+      case Month.november:
+        return 11;
+      case Month.december:
+        return 12;
+      default:
+        throw Exception('Как появился 13 месяц?');
+    }
+  }
+
   static const january = Month._internal('january');
   static const february = Month._internal('february');
   static const march = Month._internal('march');
@@ -180,6 +211,8 @@ class Replacements {
   }
 
   getReplacement(SimpleDate simpleDate) => _replacements?[simpleDate];
+
+  int get count => _replacements?.length ?? 0;
 }
 
 ///Класс, содержащий информацию о начале и конце занятия

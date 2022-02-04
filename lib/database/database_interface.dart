@@ -1,5 +1,7 @@
 import 'dart:developer';
 
+import 'package:diary/models.dart';
+import 'package:diary/widgets/layout.dart';
 import 'package:supabase/supabase.dart';
 import 'package:tuple/tuple.dart';
 
@@ -111,6 +113,50 @@ class DatabaseWorker {
       return response;
     } catch (e) {
       throw Exception('getShedule: ' + e.toString());
+    }
+  }
+
+  Future<Tuple2<String?, Map<SimpleDate, List<PairModel?>>?>> getReplacements(
+      SimpleDate date, String group) async {
+    try {
+      var response = await _client.rpc('replacementsexist', params: {
+        'selectedgroup': group,
+        'selecteddt': '2000-${date.month.num}-${date.day}'
+      }).execute();
+
+      if (response.hasError) {
+        return Tuple2(
+            'Can\'t get replacements: ' + response.error!.message, null);
+      } else {
+        var data = response.data as bool;
+        if (data == false) {
+          return const Tuple2(null, null);
+        } else {
+          response = await _client.rpc('getreplacement', params: {
+            'selectedgroup': group,
+            'selecteddt': '2000-${date.month.num}-${date.day}'
+          }).execute();
+
+          if (response.hasError) {
+            return Tuple2(
+                'Can\'t get replacements: ' + response.error!.message, null);
+          } else {
+            var pairs = <PairModel?>[];
+            var data = response.data as List<dynamic>;
+            for (var e in data) {
+              if (e['subject'] == null) {
+                pairs.add(null);
+              } else {
+                pairs.add(PairModel(e['subject'], e['teacher'], e['room']));
+              }
+            }
+
+            return Tuple2('', {date: pairs});
+          }
+        }
+      }
+    } catch (e) {
+      return Tuple2('Can\'t get replacements: ' + e.toString(), null);
     }
   }
 }

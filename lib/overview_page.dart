@@ -111,6 +111,7 @@ class _OverviewPageState extends State<OverviewPage> {
                   weekShedule = null;
                   if (_selectedGroup != 'Группа') {
                     _requestShedule(_selectedGroup);
+                    _requestReplacements(_selectedGroup);
                   }
                   _requestGroups();
                 });
@@ -120,7 +121,7 @@ class _OverviewPageState extends State<OverviewPage> {
                 color: Theme.of(context).primaryColorLight,
               )),
           Padding(
-            padding: const EdgeInsets.only(top: 10, bottom: 10),
+            padding: const EdgeInsets.only(top: 10, bottom: 10, right: 16),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -372,5 +373,11 @@ class _OverviewPageState extends State<OverviewPage> {
     } catch (e) {
       log(e.toString());
     }
+  }
+
+  void _requestReplacements(String group) async {
+    var res = await DatabaseWorker.currentDatabaseWorker!
+        .getReplacements(SimpleDate(3, Month.february), group);
+    print(res);
   }
 }

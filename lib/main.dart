@@ -1,4 +1,5 @@
 import 'package:diary/database/database_interface.dart';
+import 'package:diary/models.dart';
 import 'package:diary/overview_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
