@@ -289,7 +289,7 @@ class _OverviewPageState extends State<OverviewPage> {
 
   Future<void> tryLoadCache() async {
     if (!kIsWeb) {
-      await caching.loadWeekShedule().then((value) {
+      await caching.loadWeekShedule().then((value) async {
         if (value != null) {
           _selectedGroup = value.item1;
           timetable = value.item2;
@@ -298,7 +298,7 @@ class _OverviewPageState extends State<OverviewPage> {
         }
       });
     }
-    await _requestGroups().whenComplete(() => setState(() {}));
+    await _requestGroups();
   }
 
   Future<void> _requestGroups() async {
@@ -424,7 +424,7 @@ class _OverviewPageState extends State<OverviewPage> {
                   .getReplacement(SimpleDate(_selectedDay, _selectedMonth))
                   ?.item2 !=
               null) {
-            _replacementSelected = true;
+            setState(() => _replacementSelected = true);
           }
         }
       } else {
