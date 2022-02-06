@@ -9,7 +9,7 @@ const String supabaseKey =
 const String supabaseURL = "https://ukucnsshztcrrlwwayaw.supabase.co";
 
 class DatabaseWorker {
-  static DatabaseWorker? _currentDatabaseWorker;
+  static late DatabaseWorker _currentDatabaseWorker;
   late final SupabaseClient _client;
 
   DatabaseWorker(
@@ -115,7 +115,7 @@ class DatabaseWorker {
     }
   }
 
-  Future<Tuple2<String?, Map<SimpleDate, List<PairModel?>>?>> getReplacements(
+  Future<Tuple2<String?, Map<SimpleDate, List<PairModel?>?>?>> getReplacements(
       SimpleDate date, String group) async {
     try {
       var response = await _client.rpc('replacementsexist', params: {
@@ -129,7 +129,22 @@ class DatabaseWorker {
       } else {
         var data = response.data as bool;
         if (data == false) {
-          return const Tuple2(null, null);
+          response = await _client
+              .from('t_replacement')
+              .select()
+              .eq('dt', '2000-${date.month.num}-${date.day}')
+              .limit(1)
+              .execute();
+          if (response.hasError) {
+            return Tuple2(
+                'Can\'t get replacements: ' + response.error!.message, null);
+          } else {
+            if ((response.data as List<dynamic>).isNotEmpty) {
+              return Tuple2(null, {date: null});
+            } else {
+              return const Tuple2(null, null);
+            }
+          }
         } else {
           response = await _client.rpc('getreplacement', params: {
             'selectedgroup': group,

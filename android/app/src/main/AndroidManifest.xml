@@ -1,7 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.mtkp_space_client">
+    package="com.animpaf.mtkpspace">
+    <uses-permission android:name="android.permission.INTERNET"/>
    <application
-        android:label="mtkp_space_client"
+        android:label="МТКП Space"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

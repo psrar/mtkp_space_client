@@ -30,6 +30,7 @@ class _OverviewPageState extends State<OverviewPage> {
   late Month _selectedMonth;
   late int _selectedWeek;
   String _selectedGroup = 'Группа';
+  late DateTime now;
 
   List<String> entryOptions = [];
 
@@ -37,15 +38,28 @@ class _OverviewPageState extends State<OverviewPage> {
   List<PairModel?>? dayShedule;
   Timetable timetable = timetableEmpty;
 
-  var replacements = Replacements(null);
+  var _replacements = Replacements(null);
+  Tuple2<SimpleDate, List<PairModel?>?>? _selectedReplacement;
+
+  @override
+  void initState() {
+    super.initState();
+    now = DateTime.now();
+    DateTime date;
+    if (now.hour > 15 || now.weekday == DateTime.sunday) {
+      date = now.add(const Duration(days: 1));
+    } else {
+      date = now;
+    }
+    _selectedIndex = date.weekday - 1;
+    _selectedDay = date.day;
+    _selectedMonth = Month.all[date.month - 1];
+    _selectedWeek = Jiffy(date).week;
+    tryLoadCache().whenComplete(() => setState(() {}));
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (_selectedIndex == 6) {
-      _selectedWeek++;
-      _selectedIndex = 0;
-    }
-
     Border border;
     if (weekShedule == null) {
       border = Border.all(color: Colors.red, width: 2);
@@ -57,8 +71,9 @@ class _OverviewPageState extends State<OverviewPage> {
           width: 1);
 
       if (_replacementSelected) {
-        dayShedule = replacements
+        _selectedReplacement = _replacements
             .getReplacement(SimpleDate(_selectedDay, _selectedMonth));
+        dayShedule = _selectedReplacement?.item2;
       } else {
         dayShedule = _selectedWeek % 2 == 1
             ? weekShedule!.weekLessons.item2[_selectedIndex]
@@ -72,11 +87,14 @@ class _OverviewPageState extends State<OverviewPage> {
           child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text('Замен на этот день не обнаружено',
-              style: TextStyle(fontSize: 16)),
+          Text(
+              _selectedReplacement == null
+                  ? 'Замен на этот день не обнаружено'
+                  : 'Для вашей группы нет замен на этот день',
+              style: const TextStyle(fontSize: 16)),
           const SizedBox(height: 10),
           layout.ColoredTextButton(
-            text: 'Проверьте сами',
+            text: 'Можете проверить самостоятельно',
             onPressed: () async =>
                 await url_launcher.launch('https://vk.com/mtkp_bmstu'),
             foregroundColor: Colors.black87,
@@ -114,7 +132,7 @@ class _OverviewPageState extends State<OverviewPage> {
                 setState(() => weekShedule = null);
                 Future.wait([
                   _requestShedule(_selectedGroup),
-                  _requestReplacements(_selectedGroup),
+                  _requestReplacements(_selectedGroup, 2),
                   _requestGroups()
                 ]).whenComplete(() => setState(() {}));
               },
@@ -132,8 +150,12 @@ class _OverviewPageState extends State<OverviewPage> {
                   options: entryOptions,
                   callback: (value) => setState(() {
                     weekShedule = null;
+                    _replacements = Replacements(null);
                     _selectedGroup = value;
-                    _requestShedule(_selectedGroup);
+                    Future.wait([
+                      _requestShedule(_selectedGroup),
+                      _requestReplacements(_selectedGroup, 2)
+                    ]).whenComplete(() => setState(() {}));
                   }),
                 ),
               ],
@@ -247,6 +269,15 @@ class _OverviewPageState extends State<OverviewPage> {
                         _selectedDay = day;
                         _selectedMonth = month;
                         _selectedWeek = week;
+                        if (_replacements
+                                .getReplacement(
+                                    SimpleDate(_selectedDay, _selectedMonth))
+                                ?.item2 ==
+                            null) {
+                          _replacementSelected = false;
+                        } else {
+                          _replacementSelected = true;
+                        }
                       }),
                     ),
                   )
@@ -256,36 +287,21 @@ class _OverviewPageState extends State<OverviewPage> {
     );
   }
 
-  @override
-  void initState() {
-    super.initState();
-    var now = DateTime.now();
-    _selectedIndex = now.hour < 15
-        ? now.weekday - 1
-        : now.add(const Duration(days: 1)).weekday - 1;
-    _selectedDay = now.day;
-    _selectedMonth = Month.all[now.month - 1];
-    _selectedWeek = Jiffy(now).week;
-
-    tryLoadCache();
-  }
-
-  void tryLoadCache() async {
+  Future<void> tryLoadCache() async {
     if (!kIsWeb) {
       await caching.loadWeekShedule().then((value) {
         if (value != null) {
-          setState(() {
-            _selectedGroup = value.item1;
-            timetable = value.item2;
-            weekShedule = value.item3;
-          });
+          _selectedGroup = value.item1;
+          timetable = value.item2;
+          weekShedule = value.item3;
+          _requestReplacements(_selectedGroup, 2);
         }
       });
     }
-    _requestGroups().whenComplete(() => setState(() {}));
+    await _requestGroups().whenComplete(() => setState(() {}));
   }
 
-  Future _requestGroups() async {
+  Future<void> _requestGroups() async {
     try {
       await Connectivity().checkConnectivity().then((value) async {
         if (value != ConnectivityResult.none) {
@@ -304,7 +320,7 @@ class _OverviewPageState extends State<OverviewPage> {
     }
   }
 
-  Future _requestShedule(String group) async {
+  Future<void> _requestShedule(String group) async {
     if (group != 'Группа') {
       try {
         await Connectivity().checkConnectivity().then((value) async {
@@ -343,25 +359,23 @@ class _OverviewPageState extends State<OverviewPage> {
               DatabaseWorker.currentDatabaseWorker!
                   .getTimeshedule()
                   .then((value) {
-                setState(() {
-                  if (value.length == 6) {
-                    var times = <List<String>>[];
-                    for (var i = 0; i < 6; i++) {
-                      times.add(value[i].split('-'));
-                    }
-                    timetable = Timetable(
-                        Time(times[0][0], times[0][1]),
-                        Time(times[1][0], times[1][1]),
-                        Time(times[2][0], times[2][1]),
-                        Time(times[3][0], times[3][1]),
-                        Time(times[4][0], times[4][1]),
-                        Time(times[5][0], times[5][1]));
+                if (value.length == 6) {
+                  var times = <List<String>>[];
+                  for (var i = 0; i < 6; i++) {
+                    times.add(value[i].split('-'));
                   }
-                  weekShedule = WeekShedule(Tuple3(timetable, up, down));
-                  if (weekShedule != null && !kIsWeb) {
-                    caching.saveWeekshedule(_selectedGroup, weekShedule!);
-                  }
-                });
+                  timetable = Timetable(
+                      Time(times[0][0], times[0][1]),
+                      Time(times[1][0], times[1][1]),
+                      Time(times[2][0], times[2][1]),
+                      Time(times[3][0], times[3][1]),
+                      Time(times[4][0], times[4][1]),
+                      Time(times[5][0], times[5][1]));
+                }
+                weekShedule = WeekShedule(Tuple3(timetable, up, down));
+                if (weekShedule != null && !kIsWeb) {
+                  caching.saveWeekshedule(_selectedGroup, weekShedule!);
+                }
               });
             });
           } else {
@@ -375,10 +389,48 @@ class _OverviewPageState extends State<OverviewPage> {
     }
   }
 
-  Future _requestReplacements(String group) async {
-    if (group != 'Группа') {
-      var res = await DatabaseWorker.currentDatabaseWorker!
-          .getReplacements(SimpleDate(3, Month.february), group);
-    }
+  Future<void> _requestReplacements(String group, int rangeFromToday) async {
+    await Connectivity().checkConnectivity().then((value) async {
+      if (value != ConnectivityResult.none) {
+        var dates = [
+          for (var i = 1; i <= rangeFromToday; i++)
+            now.subtract(Duration(days: i)),
+          now,
+          now.add(const Duration(days: 1))
+        ];
+        if (group != 'Группа') {
+          Map<SimpleDate, List<PairModel?>?>? results = {};
+          var nextDay =
+              SimpleDate.fromDateTime(now.add(const Duration(days: 1)));
+          for (var element in dates) {
+            var date = SimpleDate.fromDateTime(element);
+            var res = await DatabaseWorker.currentDatabaseWorker!
+                .getReplacements(date, group);
+            if ((date.isToday || date == nextDay) &&
+                res.item1 != null &&
+                res.item1 != '') {
+              layout.showTextSnackBar(
+                  context,
+                  'Не удалось получить замены. Рекомендуем узнать их вручную.\n' +
+                      res.item1!,
+                  6000);
+            } else if (res.item2 != null) {
+              results.addAll(res.item2!);
+            }
+          }
+
+          _replacements = Replacements(results);
+          if (_replacements
+                  .getReplacement(SimpleDate(_selectedDay, _selectedMonth))
+                  ?.item2 !=
+              null) {
+            _replacementSelected = true;
+          }
+        }
+      } else {
+        layout.showTextSnackBar(context,
+            'Вы не в сети. Не удаётся загрузить данные о заменах.', 2000);
+      }
+    });
   }
 }

@@ -204,13 +204,19 @@ class PairModel {
 }
 
 class Replacements {
-  late final Map<SimpleDate, List<PairModel?>>? _replacements;
+  late final Map<SimpleDate, List<PairModel?>?>? _replacements;
 
-  Replacements(Map<SimpleDate, List<PairModel?>>? replacements) {
+  Replacements(Map<SimpleDate, List<PairModel?>?>? replacements) {
     _replacements = replacements;
   }
 
-  getReplacement(SimpleDate simpleDate) => _replacements?[simpleDate];
+  Tuple2<SimpleDate, List<PairModel?>?>? getReplacement(SimpleDate simpleDate) {
+    if (_replacements == null) {
+      null;
+    } else if (_replacements!.containsKey(simpleDate)) {
+      return Tuple2(simpleDate, _replacements![simpleDate]);
+    }
+  }
 
   int get count => _replacements?.length ?? 0;
 }
@@ -230,10 +236,17 @@ class Time {
 
 //Модель упрощенной даты (день и месяц)
 class SimpleDate {
-  final int day;
-  final Month month;
+  late final int day;
+  late final Month month;
 
   SimpleDate(this.day, this.month);
+  SimpleDate.fromDateTime(DateTime dateTime) {
+    day = dateTime.day;
+    month = Month.all[dateTime.month - 1];
+  }
+
+  bool get isToday =>
+      DateTime.now().day == day && DateTime.now().month == month.num;
 
   @override
   bool operator ==(other) =>

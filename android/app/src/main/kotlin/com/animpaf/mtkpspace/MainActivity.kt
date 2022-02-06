@@ -1,4 +1,4 @@
-package com.example.mtkp_space_client
+package com.animpaf.mtkpspace
 
 import io.flutter.embedding.android.FlutterActivity
 
