@@ -41,8 +41,12 @@ class _OverviewPageState extends State<OverviewPage> {
 
   @override
   Widget build(BuildContext context) {
-    Border border;
+    if (_selectedIndex == 6) {
+      _selectedWeek++;
+      _selectedIndex = 0;
+    }
 
+    Border border;
     if (weekShedule == null) {
       border = Border.all(color: Colors.red, width: 2);
     } else {
@@ -107,14 +111,12 @@ class _OverviewPageState extends State<OverviewPage> {
           IconButton(
               splashRadius: 18,
               onPressed: () {
-                setState(() {
-                  weekShedule = null;
-                  if (_selectedGroup != 'Группа') {
-                    _requestShedule(_selectedGroup);
-                    _requestReplacements(_selectedGroup);
-                  }
-                  _requestGroups();
-                });
+                setState(() => weekShedule = null);
+                Future.wait([
+                  _requestShedule(_selectedGroup),
+                  _requestReplacements(_selectedGroup),
+                  _requestGroups()
+                ]).whenComplete(() => setState(() {}));
               },
               icon: Icon(
                 Icons.refresh_rounded,
@@ -129,8 +131,8 @@ class _OverviewPageState extends State<OverviewPage> {
                   selectedGroup: _selectedGroup,
                   options: entryOptions,
                   callback: (value) => setState(() {
-                    _selectedGroup = value;
                     weekShedule = null;
+                    _selectedGroup = value;
                     _requestShedule(_selectedGroup);
                   }),
                 ),
@@ -280,18 +282,16 @@ class _OverviewPageState extends State<OverviewPage> {
         }
       });
     }
-    _requestGroups();
+    _requestGroups().whenComplete(() => setState(() {}));
   }
 
-  void _requestGroups() async {
+  Future _requestGroups() async {
     try {
-      await Connectivity().checkConnectivity().then((value) {
+      await Connectivity().checkConnectivity().then((value) async {
         if (value != ConnectivityResult.none) {
-          DatabaseWorker.currentDatabaseWorker!
+          await DatabaseWorker.currentDatabaseWorker!
               .getAllGroups()
-              .then((value) => setState(() {
-                    entryOptions = value;
-                  }));
+              .then((value) => entryOptions = value);
         } else {
           if (weekShedule == null) {
             layout.showTextSnackBar(
@@ -304,80 +304,81 @@ class _OverviewPageState extends State<OverviewPage> {
     }
   }
 
-  void _requestShedule(String group) async {
-    try {
-      await Connectivity().checkConnectivity().then((value) {
-        if (value != ConnectivityResult.none) {
-          DatabaseWorker.currentDatabaseWorker!
-              .getShedule(group)
-              .then((value) => setState(() {
-                    var up = <List<PairModel?>>[];
-                    var down = <List<PairModel?>>[];
-                    for (var day = 0; day < 6; day++) {
-                      var lessons = <PairModel?>[];
-                      for (var lesson = 0; lesson < 6; lesson++) {
-                        var val = value[lesson + day * 6];
-                        if (val.item1 == null) {
-                          lessons.add(null);
-                        } else {
-                          lessons
-                              .add(PairModel(val.item1!, val.item2, val.item3));
-                        }
-                      }
-                      up.add(lessons);
-                    }
+  Future _requestShedule(String group) async {
+    if (group != 'Группа') {
+      try {
+        await Connectivity().checkConnectivity().then((value) async {
+          if (value != ConnectivityResult.none) {
+            await DatabaseWorker.currentDatabaseWorker!
+                .getShedule(group)
+                .then((value) {
+              var up = <List<PairModel?>>[];
+              var down = <List<PairModel?>>[];
+              for (var day = 0; day < 6; day++) {
+                var lessons = <PairModel?>[];
+                for (var lesson = 0; lesson < 6; lesson++) {
+                  var val = value[lesson + day * 6];
+                  if (val.item1 == null) {
+                    lessons.add(null);
+                  } else {
+                    lessons.add(PairModel(val.item1!, val.item2, val.item3));
+                  }
+                }
+                up.add(lessons);
+              }
 
-                    for (var day = 6; day < 12; day++) {
-                      var lessons = <PairModel?>[];
-                      for (var lesson = 0; lesson < 6; lesson++) {
-                        var val = value[lesson + day * 6];
-                        if (val.item1 == null) {
-                          lessons.add(null);
-                        } else {
-                          lessons
-                              .add(PairModel(val.item1!, val.item2, val.item3));
-                        }
-                      }
-                      down.add(lessons);
-                    }
+              for (var day = 6; day < 12; day++) {
+                var lessons = <PairModel?>[];
+                for (var lesson = 0; lesson < 6; lesson++) {
+                  var val = value[lesson + day * 6];
+                  if (val.item1 == null) {
+                    lessons.add(null);
+                  } else {
+                    lessons.add(PairModel(val.item1!, val.item2, val.item3));
+                  }
+                }
+                down.add(lessons);
+              }
 
-                    DatabaseWorker.currentDatabaseWorker!
-                        .getTimeshedule()
-                        .then((value) {
-                      setState(() {
-                        if (value.length == 6) {
-                          var times = <List<String>>[];
-                          for (var i = 0; i < 6; i++) {
-                            times.add(value[i].split('-'));
-                          }
-                          timetable = Timetable(
-                              Time(times[0][0], times[0][1]),
-                              Time(times[1][0], times[1][1]),
-                              Time(times[2][0], times[2][1]),
-                              Time(times[3][0], times[3][1]),
-                              Time(times[4][0], times[4][1]),
-                              Time(times[5][0], times[5][1]));
-                        }
-                        weekShedule = WeekShedule(Tuple3(timetable, up, down));
-                        if (weekShedule != null && !kIsWeb) {
-                          caching.saveWeekshedule(_selectedGroup, weekShedule!);
-                        }
-                      });
-                    });
-                  }));
-        } else {
-          layout.showTextSnackBar(
-              context, 'Вы не в сети. Не удаётся загрузить данные.', 2000);
-        }
-      });
-    } catch (e) {
-      log(e.toString());
+              DatabaseWorker.currentDatabaseWorker!
+                  .getTimeshedule()
+                  .then((value) {
+                setState(() {
+                  if (value.length == 6) {
+                    var times = <List<String>>[];
+                    for (var i = 0; i < 6; i++) {
+                      times.add(value[i].split('-'));
+                    }
+                    timetable = Timetable(
+                        Time(times[0][0], times[0][1]),
+                        Time(times[1][0], times[1][1]),
+                        Time(times[2][0], times[2][1]),
+                        Time(times[3][0], times[3][1]),
+                        Time(times[4][0], times[4][1]),
+                        Time(times[5][0], times[5][1]));
+                  }
+                  weekShedule = WeekShedule(Tuple3(timetable, up, down));
+                  if (weekShedule != null && !kIsWeb) {
+                    caching.saveWeekshedule(_selectedGroup, weekShedule!);
+                  }
+                });
+              });
+            });
+          } else {
+            layout.showTextSnackBar(
+                context, 'Вы не в сети. Не удаётся загрузить данные.', 2000);
+          }
+        });
+      } catch (e) {
+        log(e.toString());
+      }
     }
   }
 
-  void _requestReplacements(String group) async {
-    var res = await DatabaseWorker.currentDatabaseWorker!
-        .getReplacements(SimpleDate(3, Month.february), group);
-    print(res);
+  Future _requestReplacements(String group) async {
+    if (group != 'Группа') {
+      var res = await DatabaseWorker.currentDatabaseWorker!
+          .getReplacements(SimpleDate(3, Month.february), group);
+    }
   }
 }

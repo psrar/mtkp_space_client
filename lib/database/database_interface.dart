@@ -1,7 +1,6 @@
 import 'dart:developer';
 
 import 'package:diary/models.dart';
-import 'package:diary/widgets/layout.dart';
 import 'package:supabase/supabase.dart';
 import 'package:tuple/tuple.dart';
 
