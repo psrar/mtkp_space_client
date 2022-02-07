@@ -304,7 +304,12 @@ class SaveModel {
   late final List<List<PairModel?>> downShedule;
   late final String group;
 
-  SaveModel(this.timetable, this.upShedule, this.downShedule, this.group);
+  SaveModel(
+    this.timetable,
+    this.upShedule,
+    this.downShedule,
+    this.group,
+  );
 
   factory SaveModel.fromJson(Map<String, dynamic> json) =>
       _$SaveModelFromJson(json);

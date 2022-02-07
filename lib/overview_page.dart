@@ -40,6 +40,7 @@ class _OverviewPageState extends State<OverviewPage> {
 
   var _replacements = Replacements(null);
   Tuple2<SimpleDate, List<PairModel?>?>? _selectedReplacement;
+  DateTime? _lastReplacements;
 
   @override
   void initState() {
@@ -56,6 +57,8 @@ class _OverviewPageState extends State<OverviewPage> {
     _selectedMonth = Month.all[date.month - 1];
     _selectedWeek = Jiffy(date).week;
     tryLoadCache().whenComplete(() => setState(() {}));
+    _requestGroups();
+    _requestReplacements(_selectedGroup, 2).whenComplete(() => setState(() {}));
   }
 
   @override
@@ -119,49 +122,50 @@ class _OverviewPageState extends State<OverviewPage> {
             ? const Center(child: CircularProgressIndicator())
             : sheduleContentWidget);
 
+    final _updateAction = IconButton(
+        splashRadius: 18,
+        onPressed: () {
+          setState(() => weekShedule = null);
+          Future.wait([
+            _requestShedule(_selectedGroup),
+            _requestReplacements(_selectedGroup, 2),
+            _requestGroups()
+          ]).whenComplete(() => setState(() {}));
+        },
+        icon: Icon(
+          Icons.refresh_rounded,
+          color: Theme.of(context).primaryColorLight,
+        ));
+
+    final _groupSelectorAction = Padding(
+      padding: const EdgeInsets.only(top: 10, bottom: 10, right: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          layout.GroupSelector(
+            selectedGroup: _selectedGroup,
+            options: entryOptions,
+            callback: (value) => setState(() {
+              weekShedule = null;
+              _replacements = Replacements(null);
+              _selectedGroup = value;
+              Future.wait([
+                _requestShedule(_selectedGroup),
+                _requestReplacements(_selectedGroup, 2)
+              ]).whenComplete(() => setState(() {}));
+            }),
+          ),
+        ],
+      ),
+    );
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
           'Расписание',
           style: TextStyle(fontWeight: FontWeight.w900, fontSize: 24),
         ),
-        actions: [
-          IconButton(
-              splashRadius: 18,
-              onPressed: () {
-                setState(() => weekShedule = null);
-                Future.wait([
-                  _requestShedule(_selectedGroup),
-                  _requestReplacements(_selectedGroup, 2),
-                  _requestGroups()
-                ]).whenComplete(() => setState(() {}));
-              },
-              icon: Icon(
-                Icons.refresh_rounded,
-                color: Theme.of(context).primaryColorLight,
-              )),
-          Padding(
-            padding: const EdgeInsets.only(top: 10, bottom: 10, right: 16),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                layout.GroupSelector(
-                  selectedGroup: _selectedGroup,
-                  options: entryOptions,
-                  callback: (value) => setState(() {
-                    weekShedule = null;
-                    _replacements = Replacements(null);
-                    _selectedGroup = value;
-                    Future.wait([
-                      _requestShedule(_selectedGroup),
-                      _requestReplacements(_selectedGroup, 2)
-                    ]).whenComplete(() => setState(() {}));
-                  }),
-                ),
-              ],
-            ),
-          ),
-        ],
+        actions: [_updateAction, _groupSelectorAction],
       ),
       body: _selectedGroup == 'Группа'
           ? Padding(
@@ -294,11 +298,9 @@ class _OverviewPageState extends State<OverviewPage> {
           _selectedGroup = value.item1;
           timetable = value.item2;
           weekShedule = value.item3;
-          _requestReplacements(_selectedGroup, 2);
         }
       });
     }
-    await _requestGroups();
   }
 
   Future<void> _requestGroups() async {
@@ -316,7 +318,8 @@ class _OverviewPageState extends State<OverviewPage> {
         }
       });
     } catch (e) {
-      log(e.toString());
+      layout.showTextSnackBar(
+          context, 'Не удаётся загрузить данные.\n${e.toString()}', 2000);
     }
   }
 
@@ -420,6 +423,7 @@ class _OverviewPageState extends State<OverviewPage> {
           }
 
           _replacements = Replacements(results);
+          _lastReplacements = DateTime.now();
           if (_replacements
                   .getReplacement(SimpleDate(_selectedDay, _selectedMonth))
                   ?.item2 !=
