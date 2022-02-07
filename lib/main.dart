@@ -17,7 +17,8 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final font = GoogleFonts.rubik();
+    final _font = GoogleFonts.rubik();
+    const Color _primaryColor = Color(0xFF00bbf9);
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
@@ -25,12 +26,17 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
           appBarTheme: const AppBarTheme(
               color: Colors.white, foregroundColor: Colors.black, elevation: 1),
-          primaryColorLight: const Color(0xFF00bbf9),
+          primaryColorLight: _primaryColor,
+          scaffoldBackgroundColor: const Color(0xFFfafafa),
+          navigationBarTheme: const NavigationBarThemeData(
+              indicatorColor: _primaryColor,
+              height: 50,
+              labelBehavior: NavigationDestinationLabelBehavior.alwaysHide),
           textTheme: TextTheme(
-              headline6: font,
-              headline5: font,
-              bodyText2: font,
-              button: font.copyWith(color: Colors.black, fontSize: 16))),
+              headline6: _font,
+              headline5: _font,
+              bodyText2: _font,
+              button: _font.copyWith(color: Colors.black, fontSize: 16))),
     );
   }
 }

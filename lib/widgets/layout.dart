@@ -1,6 +1,7 @@
 // ignore_for_file: file_names
 
 import 'package:animations/animations.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:diary/models.dart';
 import 'package:flutter/material.dart';
 import 'package:jiffy/jiffy.dart';
@@ -265,6 +266,17 @@ class ColoredTextButton extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8)),
                 primary: splashColor));
   }
+}
+
+Future<bool> checkInternetConnection(
+    BuildContext context, Function func) async {
+  var result = await Connectivity().checkConnectivity();
+  if (result != ConnectivityResult.none) {
+    func.call();
+  } else {
+    showTextSnackBar(context, 'Вы не подключены к сети', 1000);
+  }
+  return result != ConnectivityResult.none;
 }
 
 showTextSnackBar(BuildContext context, String text, int milliseconds) {

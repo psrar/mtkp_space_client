@@ -1,7 +1,6 @@
 import 'dart:developer';
 
 import 'package:auto_size_text/auto_size_text.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:diary/caching.dart' as caching;
 import 'package:diary/database/database_interface.dart';
 import 'package:diary/models.dart';
@@ -56,9 +55,8 @@ class _OverviewPageState extends State<OverviewPage> {
     _selectedDay = date.day;
     _selectedMonth = Month.all[date.month - 1];
     _selectedWeek = Jiffy(date).week;
-    tryLoadCache().whenComplete(() => setState(() {}));
-    _requestGroups();
-    _requestReplacements(_selectedGroup, 2).whenComplete(() => setState(() {}));
+
+    initialization();
   }
 
   @override
@@ -90,21 +88,40 @@ class _OverviewPageState extends State<OverviewPage> {
           child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-              _selectedReplacement == null
-                  ? 'Замен на этот день не обнаружено'
-                  : 'Для вашей группы нет замен на этот день',
-              style: const TextStyle(fontSize: 16)),
-          const SizedBox(height: 10),
+          _lastReplacements == DateTime(0)
+              ? Column(children: const [
+                  Text('Мы загружаем ваши замены'),
+                  SizedBox(height: 8),
+                  CircularProgressIndicator(),
+                  SizedBox(height: 8)
+                ])
+              : Text(
+                  _lastReplacements == null
+                      ? 'Не удалось получить замены'
+                      : _selectedReplacement == null
+                          ? 'Замен на этот день не обнаружено'
+                          : 'Для вашей группы нет замен на этот день',
+                  style: const TextStyle(fontSize: 16)),
+          const SizedBox(height: 12),
           layout.ColoredTextButton(
-            text: 'Можете проверить самостоятельно',
+            text: 'Проверить самостоятельно',
             onPressed: () async =>
                 await url_launcher.launch('https://vk.com/mtkp_bmstu'),
             foregroundColor: Colors.black87,
             boxColor: Colors.red,
             splashColor: Colors.red,
             outlined: true,
-          )
+          ),
+          const SizedBox(height: 12),
+          layout.ColoredTextButton(
+            text: 'Попробовать снова',
+            onPressed: () => layout.checkInternetConnection(
+                context, () => _requestReplacements(_selectedGroup, 2)),
+            foregroundColor: Colors.black87,
+            boxColor: Colors.orange,
+            splashColor: Colors.orange,
+            outlined: true,
+          ),
         ],
       ));
     } else {
@@ -124,13 +141,18 @@ class _OverviewPageState extends State<OverviewPage> {
 
     final _updateAction = IconButton(
         splashRadius: 18,
-        onPressed: () {
-          setState(() => weekShedule = null);
-          Future.wait([
-            _requestShedule(_selectedGroup),
-            _requestReplacements(_selectedGroup, 2),
-            _requestGroups()
-          ]).whenComplete(() => setState(() {}));
+        onPressed: () async {
+          layout.checkInternetConnection(context, () {
+            setState(() {
+              weekShedule = null;
+              _replacements = Replacements(null);
+            });
+            Future.wait([
+              _requestShedule(_selectedGroup),
+              _requestReplacements(_selectedGroup, 2),
+              _requestGroups()
+            ]).whenComplete(() => setState(() {}));
+          });
         },
         icon: Icon(
           Icons.refresh_rounded,
@@ -145,15 +167,19 @@ class _OverviewPageState extends State<OverviewPage> {
           layout.GroupSelector(
             selectedGroup: _selectedGroup,
             options: entryOptions,
-            callback: (value) => setState(() {
-              weekShedule = null;
-              _replacements = Replacements(null);
-              _selectedGroup = value;
-              Future.wait([
-                _requestShedule(_selectedGroup),
-                _requestReplacements(_selectedGroup, 2)
-              ]).whenComplete(() => setState(() {}));
-            }),
+            callback: (value) {
+              layout.checkInternetConnection(context, () async {
+                setState(() {
+                  weekShedule = null;
+                  _replacements = Replacements(null);
+                  _selectedGroup = value;
+                });
+                await Future.wait([
+                  _requestShedule(_selectedGroup),
+                  _requestReplacements(_selectedGroup, 2)
+                ]).whenComplete(() => setState(() {}));
+              });
+            },
           ),
         ],
       ),
@@ -291,13 +317,24 @@ class _OverviewPageState extends State<OverviewPage> {
     );
   }
 
+  void initialization() async {
+    await tryLoadCache();
+
+    await layout.checkInternetConnection(context, () async {
+      await _requestGroups();
+      await _requestReplacements(_selectedGroup, 2);
+    });
+  }
+
   Future<void> tryLoadCache() async {
     if (!kIsWeb) {
-      await caching.loadWeekShedule().then((value) async {
+      await caching.loadWeekShedule().then((value) {
         if (value != null) {
-          _selectedGroup = value.item1;
-          timetable = value.item2;
-          weekShedule = value.item3;
+          setState(() {
+            _selectedGroup = value.item1;
+            timetable = value.item2;
+            weekShedule = value.item3;
+          });
         }
       });
     }
@@ -305,86 +342,70 @@ class _OverviewPageState extends State<OverviewPage> {
 
   Future<void> _requestGroups() async {
     try {
-      await Connectivity().checkConnectivity().then((value) async {
-        if (value != ConnectivityResult.none) {
-          await DatabaseWorker.currentDatabaseWorker!
-              .getAllGroups()
-              .then((value) => entryOptions = value);
-        } else {
-          if (weekShedule == null) {
-            layout.showTextSnackBar(
-                context, 'Вы не в сети. Не удаётся загрузить данные.', 2000);
-          }
-        }
-      });
+      await DatabaseWorker.currentDatabaseWorker!
+          .getAllGroups()
+          .then((value) => entryOptions = value);
     } catch (e) {
       layout.showTextSnackBar(
-          context, 'Не удаётся загрузить данные.\n${e.toString()}', 2000);
+          context, 'Не удаётся загрузить данные о группах.', 2000);
     }
   }
 
   Future<void> _requestShedule(String group) async {
     if (group != 'Группа') {
       try {
-        await Connectivity().checkConnectivity().then((value) async {
-          if (value != ConnectivityResult.none) {
-            await DatabaseWorker.currentDatabaseWorker!
-                .getShedule(group)
-                .then((value) {
-              var up = <List<PairModel?>>[];
-              var down = <List<PairModel?>>[];
-              for (var day = 0; day < 6; day++) {
-                var lessons = <PairModel?>[];
-                for (var lesson = 0; lesson < 6; lesson++) {
-                  var val = value[lesson + day * 6];
-                  if (val.item1 == null) {
-                    lessons.add(null);
-                  } else {
-                    lessons.add(PairModel(val.item1!, val.item2, val.item3));
-                  }
-                }
-                up.add(lessons);
+        await DatabaseWorker.currentDatabaseWorker!
+            .getShedule(group)
+            .then((value) {
+          var up = <List<PairModel?>>[];
+          var down = <List<PairModel?>>[];
+          for (var day = 0; day < 6; day++) {
+            var lessons = <PairModel?>[];
+            for (var lesson = 0; lesson < 6; lesson++) {
+              var val = value[lesson + day * 6];
+              if (val.item1 == null) {
+                lessons.add(null);
+              } else {
+                lessons.add(PairModel(val.item1!, val.item2, val.item3));
               }
-
-              for (var day = 6; day < 12; day++) {
-                var lessons = <PairModel?>[];
-                for (var lesson = 0; lesson < 6; lesson++) {
-                  var val = value[lesson + day * 6];
-                  if (val.item1 == null) {
-                    lessons.add(null);
-                  } else {
-                    lessons.add(PairModel(val.item1!, val.item2, val.item3));
-                  }
-                }
-                down.add(lessons);
-              }
-
-              DatabaseWorker.currentDatabaseWorker!
-                  .getTimeshedule()
-                  .then((value) {
-                if (value.length == 6) {
-                  var times = <List<String>>[];
-                  for (var i = 0; i < 6; i++) {
-                    times.add(value[i].split('-'));
-                  }
-                  timetable = Timetable(
-                      Time(times[0][0], times[0][1]),
-                      Time(times[1][0], times[1][1]),
-                      Time(times[2][0], times[2][1]),
-                      Time(times[3][0], times[3][1]),
-                      Time(times[4][0], times[4][1]),
-                      Time(times[5][0], times[5][1]));
-                }
-                weekShedule = WeekShedule(Tuple3(timetable, up, down));
-                if (weekShedule != null && !kIsWeb) {
-                  caching.saveWeekshedule(_selectedGroup, weekShedule!);
-                }
-              });
-            });
-          } else {
-            layout.showTextSnackBar(
-                context, 'Вы не в сети. Не удаётся загрузить данные.', 2000);
+            }
+            up.add(lessons);
           }
+
+          for (var day = 6; day < 12; day++) {
+            var lessons = <PairModel?>[];
+            for (var lesson = 0; lesson < 6; lesson++) {
+              var val = value[lesson + day * 6];
+              if (val.item1 == null) {
+                lessons.add(null);
+              } else {
+                lessons.add(PairModel(val.item1!, val.item2, val.item3));
+              }
+            }
+            down.add(lessons);
+          }
+
+          DatabaseWorker.currentDatabaseWorker!.getTimeshedule().then((value) {
+            if (value.length == 6) {
+              var times = <List<String>>[];
+              for (var i = 0; i < 6; i++) {
+                times.add(value[i].split('-'));
+              }
+              timetable = Timetable(
+                  Time(times[0][0], times[0][1]),
+                  Time(times[1][0], times[1][1]),
+                  Time(times[2][0], times[2][1]),
+                  Time(times[3][0], times[3][1]),
+                  Time(times[4][0], times[4][1]),
+                  Time(times[5][0], times[5][1]));
+            }
+            setState(
+                () => weekShedule = WeekShedule(Tuple3(timetable, up, down)));
+
+            if (weekShedule != null && !kIsWeb) {
+              caching.saveWeekshedule(_selectedGroup, weekShedule!);
+            }
+          });
         });
       } catch (e) {
         log(e.toString());
@@ -393,48 +414,42 @@ class _OverviewPageState extends State<OverviewPage> {
   }
 
   Future<void> _requestReplacements(String group, int rangeFromToday) async {
-    await Connectivity().checkConnectivity().then((value) async {
-      if (value != ConnectivityResult.none) {
-        var dates = [
-          for (var i = 1; i <= rangeFromToday; i++)
-            now.subtract(Duration(days: i)),
-          now,
-          now.add(const Duration(days: 1))
-        ];
-        if (group != 'Группа') {
-          Map<SimpleDate, List<PairModel?>?>? results = {};
-          var nextDay =
-              SimpleDate.fromDateTime(now.add(const Duration(days: 1)));
-          for (var element in dates) {
-            var date = SimpleDate.fromDateTime(element);
-            var res = await DatabaseWorker.currentDatabaseWorker!
-                .getReplacements(date, group);
-            if ((date.isToday || date == nextDay) &&
-                res.item1 != null &&
-                res.item1 != '') {
-              layout.showTextSnackBar(
-                  context,
-                  'Не удалось получить замены. Рекомендуем узнать их вручную.\n' +
-                      res.item1!,
-                  6000);
-            } else if (res.item2 != null) {
-              results.addAll(res.item2!);
-            }
-          }
-
-          _replacements = Replacements(results);
-          _lastReplacements = DateTime.now();
-          if (_replacements
-                  .getReplacement(SimpleDate(_selectedDay, _selectedMonth))
-                  ?.item2 !=
-              null) {
-            setState(() => _replacementSelected = true);
-          }
+    setState(() => _lastReplacements = DateTime(0));
+    var dates = [
+      for (var i = 1; i <= rangeFromToday; i++) now.subtract(Duration(days: i)),
+      now,
+      now.add(const Duration(days: 1))
+    ];
+    if (group != 'Группа') {
+      Map<SimpleDate, List<PairModel?>?>? results = {};
+      var nextDay = SimpleDate.fromDateTime(now.add(const Duration(days: 1)));
+      for (var element in dates) {
+        var date = SimpleDate.fromDateTime(element);
+        var res = await DatabaseWorker.currentDatabaseWorker!
+            .getReplacements(date, group);
+        if ((date.isToday || date == nextDay) &&
+            res.item1 != null &&
+            res.item1 != '') {
+          setState(() => _lastReplacements = null);
+          layout.showTextSnackBar(
+              context,
+              'Не удалось получить замены. Узнайте их вручную.\n' + res.item1!,
+              6000);
+        } else if (res.item2 != null) {
+          results.addAll(res.item2!);
         }
-      } else {
-        layout.showTextSnackBar(context,
-            'Вы не в сети. Не удаётся загрузить данные о заменах.', 2000);
       }
-    });
+
+      setState(() {
+        _replacements = Replacements(results);
+        _lastReplacements = DateTime.now();
+        if (_replacements
+                .getReplacement(SimpleDate(_selectedDay, _selectedMonth))
+                ?.item2 !=
+            null) {
+          _replacementSelected = true;
+        }
+      });
+    }
   }
 }
