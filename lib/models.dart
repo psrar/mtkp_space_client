@@ -211,10 +211,10 @@ class Replacements {
   }
 
   Tuple2<SimpleDate, List<PairModel?>?>? getReplacement(SimpleDate simpleDate) {
-    if (_replacements == null) {
-      null;
-    } else if (_replacements!.containsKey(simpleDate)) {
+    if (_replacements != null && _replacements!.containsKey(simpleDate)) {
       return Tuple2(simpleDate, _replacements![simpleDate]);
+    } else {
+      return null;
     }
   }
 

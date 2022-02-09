@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final _font = GoogleFonts.rubik();
-    const Color _primaryColor = Color(0xFF00bbf9);
+    const Color _primaryColor = Color.fromARGB(255, 0, 124, 249);
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,

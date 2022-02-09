@@ -3,6 +3,8 @@ import 'package:diary/models.dart';
 import 'package:flutter/material.dart';
 import 'package:tuple/tuple.dart';
 
+AutoSizeGroup _sizeGroup = AutoSizeGroup();
+
 class SheduleContentWidget extends StatelessWidget {
   final Tuple2<Timetable, List<PairModel?>?> dayShedule;
 
@@ -34,7 +36,7 @@ class SheduleContentWidget extends StatelessWidget {
           const Divider(
             height: 1,
             thickness: 1,
-            color: Colors.black38,
+            color: Colors.black26,
           ));
     }
 
@@ -63,7 +65,7 @@ class LessonWidget extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
             width: 48,
             decoration: const BoxDecoration(
-                border: Border(right: BorderSide(color: Colors.black38))),
+                border: Border(right: BorderSide(color: Colors.black26))),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -92,7 +94,7 @@ class LessonWidget extends StatelessWidget {
           ),
           Expanded(
             child: Container(
-              padding: const EdgeInsets.all(4),
+              padding: const EdgeInsets.all(6),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -101,18 +103,23 @@ class LessonWidget extends StatelessWidget {
                     child: AutoSizeText(
                       lessonModel.toStringMap['name']!,
                       style: const TextStyle(
-                          fontWeight: FontWeight.w700, fontSize: 14),
+                          fontWeight: FontWeight.w700, fontSize: 18),
+                      minFontSize: 8,
                       overflow: TextOverflow.ellipsis,
-                      maxLines: 2,
+                      maxLines: 4,
+                      group: _sizeGroup,
                     ),
                   ),
+                  Expanded(flex: 1, child: Container()),
                   Expanded(
                     flex: 4,
                     child: Align(
-                      alignment: Alignment.bottomRight,
+                      alignment: Alignment.bottomLeft,
                       child: AutoSizeText(
                         lessonModel.toStringMap['teacher']!,
-                        minFontSize: 8,
+                        style: const TextStyle(fontSize: 100),
+                        maxFontSize: 18,
+                        overflow: TextOverflow.fade,
                         softWrap: false,
                       ),
                     ),
@@ -141,7 +148,7 @@ class EmptyLessonWidget extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
             width: 48,
             decoration: const BoxDecoration(
-                border: Border(right: BorderSide(color: Colors.black38))),
+                border: Border(right: BorderSide(color: Colors.black26))),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
