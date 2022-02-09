@@ -84,7 +84,7 @@ class LessonWidget extends StatelessWidget {
                 ),
                 Expanded(
                   child: AutoSizeText(
-                    '${lessonModel.toStringMap['room']}',
+                    '${lessonModel.roomReadable}',
                     textAlign: TextAlign.right,
                     minFontSize: 4,
                   ),
@@ -94,16 +94,16 @@ class LessonWidget extends StatelessWidget {
           ),
           Expanded(
             child: Container(
-              padding: const EdgeInsets.all(6),
+              padding: const EdgeInsets.all(4),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Expanded(
                     flex: 10,
                     child: AutoSizeText(
-                      lessonModel.toStringMap['name']!,
+                      lessonModel.name,
                       style: const TextStyle(
-                          fontWeight: FontWeight.w700, fontSize: 18),
+                          fontWeight: FontWeight.bold, fontSize: 18),
                       minFontSize: 8,
                       overflow: TextOverflow.ellipsis,
                       maxLines: 4,
@@ -116,7 +116,7 @@ class LessonWidget extends StatelessWidget {
                     child: Align(
                       alignment: Alignment.bottomLeft,
                       child: AutoSizeText(
-                        lessonModel.toStringMap['teacher']!,
+                        lessonModel.teacherReadable,
                         style: const TextStyle(fontSize: 100),
                         maxFontSize: 18,
                         overflow: TextOverflow.fade,

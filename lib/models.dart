@@ -180,13 +180,10 @@ class PairModel {
   ///Создает модель пары по расписанию. Week - обозначение нечетности (1) и четности (2) недели. Если предмет есть на обеих неделях, необходимо указать число (3).
   PairModel(this.name, this.teacherName, this.room);
 
-  Map<String, String> get toStringMap => {
-        'name': name,
-        'teacher': teacherName == null || teacherName == ''
-            ? 'Не указан'
-            : teacherName!,
-        'room': room == null ? '—' : room!
-      };
+  get teacherReadable =>
+      teacherName == null || teacherName == '' ? 'Не указан' : teacherName!;
+
+  get roomReadable => room ?? '—';
 
   factory PairModel.fromJson(Map<String, dynamic> json) =>
       _$PairModelFromJson(json);

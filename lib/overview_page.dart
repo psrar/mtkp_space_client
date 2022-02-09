@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:diary/caching.dart' as caching;
 import 'package:diary/database/database_interface.dart';
+import 'package:diary/domens_view.dart';
 import 'package:diary/models.dart';
 import 'package:diary/widgets/layout.dart' as layout;
 import 'package:diary/widgets/shedule.dart';
@@ -41,6 +42,9 @@ class _OverviewPageState extends State<OverviewPage> {
   Tuple2<SimpleDate, List<PairModel?>?>? _selectedReplacement;
   DateTime? _lastReplacements;
 
+  int _selectedView = 0;
+  final _views = <Widget>[Container(), Container()];
+
   @override
   void initState() {
     super.initState();
@@ -65,6 +69,9 @@ class _OverviewPageState extends State<OverviewPage> {
     if (weekShedule == null) {
       border = Border.all(color: Colors.red, width: 2);
     } else {
+      _views[1] =
+          DomensView(existingPairs: weeksheduleToExistingPairs(weekShedule!));
+
       border = Border.all(
           color: _replacementSelected
               ? Colors.orange
@@ -185,136 +192,151 @@ class _OverviewPageState extends State<OverviewPage> {
       ),
     );
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Расписание',
-          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 24),
-        ),
-        actions: [_updateAction, _groupSelectorAction],
-      ),
-      body: _selectedGroup == 'Группа'
-          ? Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Center(
-                  child: Text(
-                entryOptions.isEmpty && _selectedGroup == 'Группа'
-                    ? 'Загружается список групп...'
-                    : 'Выберите группу, чтобы посмотреть её расписание',
-                style:
-                    const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              )),
-            )
-          : Padding(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(flex: 12, child: sheduleWidget),
-                  const SizedBox(
-                    height: 4,
-                  ),
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                          color: Colors.black12,
-                          borderRadius: BorderRadius.circular(8)),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Expanded(
-                            child: layout.SlideTransitionDraft(
-                              child: AutoSizeText(
-                                '$_selectedDay, ${_selectedMonth.name}' +
-                                    (_replacementSelected ? ', Замены' : ''),
-                                key: ValueKey(
-                                    [_selectedDay, _replacementSelected]),
-                                textAlign: TextAlign.center,
-                                minFontSize: 8,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            width: 1,
-                            color: Colors.black12,
-                          ),
-                          Expanded(
-                            child: layout.SlideTransitionDraft(
-                              child: AutoSizeText(
-                                _selectedWeek % 2 == 0
-                                    ? 'Нижняя неделя'
-                                    : 'Верхняя неделя',
-                                key: ValueKey(_selectedWeek),
-                                textAlign: TextAlign.center,
-                                minFontSize: 8,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  Expanded(
+    _views[0] = _selectedGroup == 'Группа'
+        ? Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Center(
+                child: Text(
+              entryOptions.isEmpty && _selectedGroup == 'Группа'
+                  ? 'Загружается список групп...'
+                  : 'Выберите группу, чтобы посмотреть её расписание',
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            )),
+          )
+        : Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(flex: 12, child: sheduleWidget),
+                const SizedBox(
+                  height: 4,
+                ),
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                        color: Colors.black12,
+                        borderRadius: BorderRadius.circular(8)),
                     child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Expanded(
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            constraints: const BoxConstraints.expand(),
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                  color: _replacementSelected
-                                      ? Colors.orange
-                                      : Theme.of(context).primaryColorLight),
-                              borderRadius: BorderRadius.circular(8),
+                          child: layout.SlideTransitionDraft(
+                            child: AutoSizeText(
+                              '$_selectedDay, ${_selectedMonth.name}' +
+                                  (_replacementSelected ? ', Замены' : ''),
+                              key: ValueKey(
+                                  [_selectedDay, _replacementSelected]),
+                              textAlign: TextAlign.center,
+                              minFontSize: 8,
                             ),
-                            child: InkWell(
-                                onTap: () => setState(() {
-                                      _replacementSelected =
-                                          !_replacementSelected;
-                                    }),
-                                borderRadius: BorderRadius.circular(6),
-                                child: layout.SlideTransitionDraft(
-                                  child: AutoSizeText(
-                                    _replacementSelected
-                                        ? 'Смотреть расписание'
-                                        : 'Смотреть замены',
-                                    key: ValueKey(_replacementSelected),
-                                    minFontSize: 8,
-                                  ),
-                                )),
+                          ),
+                        ),
+                        Container(
+                          width: 1,
+                          color: Colors.black12,
+                        ),
+                        Expanded(
+                          child: layout.SlideTransitionDraft(
+                            child: AutoSizeText(
+                              _selectedWeek % 2 == 0
+                                  ? 'Нижняя неделя'
+                                  : 'Верхняя неделя',
+                              key: ValueKey(_selectedWeek),
+                              textAlign: TextAlign.center,
+                              minFontSize: 8,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  FittedBox(
-                    child: layout.OutlinedRadioGroup(
-                      startIndex: _selectedIndex,
-                      callback: (index, day, month, week) => setState(() {
-                        _selectedIndex = index;
-                        _selectedDay = day;
-                        _selectedMonth = month;
-                        _selectedWeek = week;
-                        if (_replacements
-                                .getReplacement(
-                                    SimpleDate(_selectedDay, _selectedMonth))
-                                ?.item2 ==
-                            null) {
-                          _replacementSelected = false;
-                        } else {
-                          _replacementSelected = true;
-                        }
-                      }),
-                    ),
-                  )
-                ],
-              ),
+                ),
+                const SizedBox(height: 18),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          constraints: const BoxConstraints.expand(),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                                color: _replacementSelected
+                                    ? Colors.orange
+                                    : Theme.of(context).primaryColorLight),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: InkWell(
+                              onTap: () => setState(() {
+                                    _replacementSelected =
+                                        !_replacementSelected;
+                                  }),
+                              borderRadius: BorderRadius.circular(6),
+                              child: layout.SlideTransitionDraft(
+                                child: AutoSizeText(
+                                  _replacementSelected
+                                      ? 'Смотреть расписание'
+                                      : 'Смотреть замены',
+                                  key: ValueKey(_replacementSelected),
+                                  minFontSize: 8,
+                                ),
+                              )),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                FittedBox(
+                  child: layout.OutlinedRadioGroup(
+                    startIndex: _selectedIndex,
+                    callback: (index, day, month, week) => setState(() {
+                      _selectedIndex = index;
+                      _selectedDay = day;
+                      _selectedMonth = month;
+                      _selectedWeek = week;
+                      if (_replacements
+                              .getReplacement(
+                                  SimpleDate(_selectedDay, _selectedMonth))
+                              ?.item2 ==
+                          null) {
+                        _replacementSelected = false;
+                      } else {
+                        _replacementSelected = true;
+                      }
+                    }),
+                  ),
+                )
+              ],
             ),
-    );
+          );
+
+    return Scaffold(
+        appBar: AppBar(
+          title: const Text(
+            'Расписание',
+            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 24),
+          ),
+          actions: [_updateAction, _groupSelectorAction],
+        ),
+        bottomNavigationBar: NavigationBar(
+            selectedIndex: _selectedView,
+            onDestinationSelected: (index) =>
+                setState(() => _selectedView = index),
+            destinations: const [
+              NavigationDestination(
+                  icon: Icon(Icons.view_day_rounded),
+                  selectedIcon:
+                      Icon(Icons.view_day_rounded, color: Colors.white),
+                  label: 'Расписание'),
+              NavigationDestination(
+                  icon: Icon(Icons.school_rounded),
+                  selectedIcon: Icon(Icons.school_rounded, color: Colors.white),
+                  label: 'Преподаватели и предметы'),
+            ]),
+        body: _views[_selectedView]);
   }
 
   void initialization() async {
@@ -451,5 +473,25 @@ class _OverviewPageState extends State<OverviewPage> {
         }
       });
     }
+  }
+
+  Map<String, String> weeksheduleToExistingPairs(WeekShedule inputShedule) {
+    var result = <String, String>{};
+    for (var element in inputShedule.weekLessons.item2) {
+      for (var pair in element) {
+        if (pair != null) {
+          result[pair.name] = pair.teacherReadable;
+        }
+      }
+    }
+    for (var element in inputShedule.weekLessons.item3) {
+      for (var pair in element) {
+        if (pair != null) {
+          result[pair.name] = pair.teacherReadable;
+        }
+      }
+    }
+
+    return result;
   }
 }
