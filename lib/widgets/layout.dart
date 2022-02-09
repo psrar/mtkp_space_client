@@ -274,7 +274,7 @@ Future<bool> checkInternetConnection(
   if (result != ConnectivityResult.none) {
     func.call();
   } else {
-    showTextSnackBar(context, 'Вы не подключены к сети', 1000);
+    showTextSnackBar(context, 'Вы не подключены к сети', 700);
   }
   return result != ConnectivityResult.none;
 }

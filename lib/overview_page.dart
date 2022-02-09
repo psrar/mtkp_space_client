@@ -46,7 +46,7 @@ class _OverviewPageState extends State<OverviewPage> {
     super.initState();
     now = DateTime.now();
     DateTime date;
-    if (now.hour > 15 || now.weekday == DateTime.sunday) {
+    if (now.hour > 14 || now.weekday == DateTime.sunday) {
       date = now.add(const Duration(days: 1));
     } else {
       date = now;

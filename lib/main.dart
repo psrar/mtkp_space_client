@@ -1,9 +1,8 @@
 import 'package:diary/database/database_interface.dart';
+import 'package:diary/overview_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
-
-import 'main_screen.dart';
 
 void main() {
   DatabaseWorker();
@@ -22,7 +21,7 @@ class MyApp extends StatelessWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: const MainScreen(),
+      home: const OverviewPage(),
       theme: ThemeData(
           appBarTheme: const AppBarTheme(
               color: Colors.white, foregroundColor: Colors.black, elevation: 1),
