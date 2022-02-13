@@ -12,7 +12,7 @@ class DomensView extends StatelessWidget {
     pairs.sort((a, b) => a[0].compareTo(b[0]));
 
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(4, 4, 4, 0),
+      padding: const EdgeInsets.all(6),
       itemBuilder: (context, index) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

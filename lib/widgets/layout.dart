@@ -10,8 +10,13 @@ class OutlinedRadioGroup extends StatefulWidget {
   final Function(int _selectedIndex, int selectedDay, Month selectedMonth,
       int selectedWeek)? callback;
   final int startIndex;
+  final int startWeek;
 
-  const OutlinedRadioGroup({Key? key, this.callback, this.startIndex = 0})
+  const OutlinedRadioGroup(
+      {Key? key,
+      this.callback,
+      required this.startIndex,
+      required this.startWeek})
       : super(key: key);
 
   @override
@@ -29,7 +34,7 @@ class _OutlinedRadioGroupState extends State<OutlinedRadioGroup> {
   void initState() {
     super.initState();
     _selectedIndex = widget.startIndex;
-    _selectedWeek = Jiffy(DateTime.now()).week;
+    _selectedWeek = widget.startWeek;
 
     _constructDays();
   }
@@ -85,6 +90,7 @@ class _OutlinedRadioGroupState extends State<OutlinedRadioGroup> {
             onPressed: diff < 2
                 ? () => setState(() {
                       _selectedWeek--;
+                      if (_selectedIndex == 0) _selectedIndex = 5;
                       _constructDays();
                       _sendCallback();
                     })
@@ -97,6 +103,7 @@ class _OutlinedRadioGroupState extends State<OutlinedRadioGroup> {
             onPressed: -diff < 2
                 ? () => setState(() {
                       _selectedWeek++;
+                      if (_selectedIndex == 5) _selectedIndex = 0;
                       _constructDays();
                       _sendCallback();
                     })

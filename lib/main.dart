@@ -1,3 +1,4 @@
+// import 'package:diary/background_worker.dart';
 import 'package:diary/database/database_interface.dart';
 import 'package:diary/overview_page.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +9,7 @@ void main() {
   DatabaseWorker();
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  // startDispatcher();
   runApp(const MyApp());
 }
 

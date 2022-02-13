@@ -51,7 +51,7 @@ class _OverviewPageState extends State<OverviewPage> {
     now = DateTime.now();
     DateTime date;
     if (now.hour > 14 || now.weekday == DateTime.sunday) {
-      date = now.add(const Duration(days: 1));
+      date = now.add(Duration(days: now.weekday == DateTime.saturday ? 2 : 1));
     } else {
       date = now;
     }
@@ -292,6 +292,7 @@ class _OverviewPageState extends State<OverviewPage> {
                 FittedBox(
                   child: layout.OutlinedRadioGroup(
                     startIndex: _selectedIndex,
+                    startWeek: _selectedWeek,
                     callback: (index, day, month, week) => setState(() {
                       _selectedIndex = index;
                       _selectedDay = day;
