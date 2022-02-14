@@ -9,7 +9,6 @@ void main() {
   DatabaseWorker();
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-  // startDispatcher();
   runApp(const MyApp());
 }
 

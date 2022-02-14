@@ -16,6 +16,28 @@ import 'package:url_launcher/url_launcher.dart' as url_launcher;
 final Timetable timetableEmpty = Timetable(Time('', ''), Time('', ''),
     Time('', ''), Time('', ''), Time('', ''), Time('', ''));
 
+final testTimetable = Timetable(
+    Time('9:00', '10:30'),
+    Time('10:50', '12:10'),
+    Time('12:40', '14:00'),
+    Time('14:30', '16:00'),
+    Time('16:10', '17:40'),
+    Time('00:00', '99:99'));
+final testWeekShedule = WeekShedule(Tuple3(testTimetable, [
+  for (var i = 0; i < 6; i++)
+    [
+      for (var i = 0; i < 6; i++)
+        PairModel('Предмет', 'Учитель', '11${i.toString()}')
+    ]
+], [
+  for (var i = 0; i < 6; i++)
+    [
+      for (var i = 0; i < 6; i++)
+        PairModel('Предмет', 'Учитель', '22${i.toString()}')
+    ]
+]));
+const debug = false;
+
 class OverviewPage extends StatefulWidget {
   const OverviewPage({Key? key}) : super(key: key);
 
@@ -205,14 +227,10 @@ class _OverviewPageState extends State<OverviewPage> {
             )),
           )
         : Padding(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(flex: 12, child: sheduleWidget),
-                const SizedBox(
-                  height: 4,
-                ),
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
@@ -253,6 +271,8 @@ class _OverviewPageState extends State<OverviewPage> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 8),
+                Expanded(flex: 12, child: sheduleWidget),
                 const SizedBox(height: 18),
                 Expanded(
                   child: Row(
@@ -316,10 +336,8 @@ class _OverviewPageState extends State<OverviewPage> {
 
     return Scaffold(
         appBar: AppBar(
-          title: const Text(
-            'Расписание',
-            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 24),
-          ),
+          title: const Text('Расписание',
+              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 24)),
           actions: [_updateAction, _groupSelectorAction],
         ),
         bottomNavigationBar: NavigationBar(
@@ -341,12 +359,18 @@ class _OverviewPageState extends State<OverviewPage> {
   }
 
   void initialization() async {
-    await tryLoadCache();
+    if (!debug) {
+      await tryLoadCache();
 
-    await layout.checkInternetConnection(context, () async {
-      await _requestGroups();
-      await _requestReplacements(_selectedGroup, 2);
-    });
+      await layout.checkInternetConnection(context, () async {
+        await _requestGroups();
+        await _requestReplacements(_selectedGroup, 2);
+      });
+    } else {
+      weekShedule = testWeekShedule;
+      timetable = testTimetable;
+      _selectedGroup = 'Тест';
+    }
   }
 
   Future<void> tryLoadCache() async {

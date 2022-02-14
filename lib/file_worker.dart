@@ -8,11 +8,11 @@ Future saveLastReplacementStamp(int fileID, DateTime dateTimeStamp) async {
     file.writeAsString('$fileID~$dateTimeStamp\n');
   } else {
     var logs = await file.readAsLines();
-    logs.add('$fileID~$dateTimeStamp\n');
-    if (logs.length > 3) {
-      logs = logs.sublist(1);
+    if (logs.length > 2) {
+      logs = logs.sublist(1, 3);
     }
-    await file.writeAsString(logs.join('\n'), mode: FileMode.append);
+    logs.add('$fileID~$dateTimeStamp\n');
+    await file.writeAsString(logs.join('\n'), mode: FileMode.write);
   }
 }
 
