@@ -13,6 +13,8 @@ import 'package:jiffy/jiffy.dart';
 import 'package:tuple/tuple.dart';
 import 'package:url_launcher/url_launcher.dart' as url_launcher;
 
+part 'overview_page_widgets.dart';
+
 final Timetable timetableEmpty = Timetable(Time('', ''), Time('', ''),
     Time('', ''), Time('', ''), Time('', ''), Time('', ''));
 
@@ -36,7 +38,7 @@ final testWeekShedule = WeekShedule(Tuple3(testTimetable, [
         PairModel('Предмет', 'Учитель', '22${i.toString()}')
     ]
 ]));
-const debug = false;
+const debug = true;
 
 class OverviewPage extends StatefulWidget {
   const OverviewPage({Key? key}) : super(key: key);
@@ -46,7 +48,7 @@ class OverviewPage extends StatefulWidget {
 }
 
 class _OverviewPageState extends State<OverviewPage> {
-  late bool _replacementSelected = false;
+  late bool _isReplacementSelected = false;
   late int _selectedIndex;
   late int _selectedDay;
   late Month _selectedMonth;
@@ -95,12 +97,12 @@ class _OverviewPageState extends State<OverviewPage> {
           DomensView(existingPairs: weeksheduleToExistingPairs(weekShedule!));
 
       border = Border.all(
-          color: _replacementSelected
+          color: _isReplacementSelected
               ? Colors.orange
               : Theme.of(context).primaryColorLight,
           width: 1);
 
-      if (_replacementSelected) {
+      if (_isReplacementSelected) {
         _selectedReplacement = _replacements
             .getReplacement(SimpleDate(_selectedDay, _selectedMonth));
         dayShedule = _selectedReplacement?.item2;
@@ -112,47 +114,13 @@ class _OverviewPageState extends State<OverviewPage> {
     }
 
     late final Widget sheduleContentWidget;
-    if (_replacementSelected && dayShedule == null) {
-      sheduleContentWidget = Center(
-          child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _lastReplacements == DateTime(0)
-              ? Column(children: const [
-                  Text('Мы загружаем ваши замены'),
-                  SizedBox(height: 8),
-                  CircularProgressIndicator(),
-                  SizedBox(height: 8)
-                ])
-              : Text(
-                  _lastReplacements == null
-                      ? 'Не удалось получить замены'
-                      : _selectedReplacement == null
-                          ? 'Замен на этот день не обнаружено'
-                          : 'Для вашей группы нет замен на этот день',
-                  style: const TextStyle(fontSize: 16)),
-          const SizedBox(height: 12),
-          layout.ColoredTextButton(
-            text: 'Проверить самостоятельно',
-            onPressed: () async =>
-                await url_launcher.launch('https://vk.com/mtkp_bmstu'),
-            foregroundColor: Colors.black87,
-            boxColor: Colors.red,
-            splashColor: Colors.red,
-            outlined: true,
-          ),
-          const SizedBox(height: 12),
-          layout.ColoredTextButton(
-            text: 'Попробовать снова',
-            onPressed: () => layout.checkInternetConnection(
-                context, () => _requestReplacements(_selectedGroup, 2)),
-            foregroundColor: Colors.black87,
-            boxColor: Colors.orange,
-            splashColor: Colors.orange,
-            outlined: true,
-          ),
-        ],
-      ));
+    if (_isReplacementSelected && dayShedule == null) {
+      sheduleContentWidget = buildEmptyReplacements(
+          context,
+          _lastReplacements,
+          _selectedReplacement,
+          () => layout.checkInternetConnection(
+              context, () => _requestReplacements(_selectedGroup, 2)));
     } else {
       sheduleContentWidget =
           SheduleContentWidget(dayShedule: Tuple2(timetable, dayShedule));
@@ -213,99 +181,42 @@ class _OverviewPageState extends State<OverviewPage> {
         ],
       ),
     );
-
+// const EdgeInsets.symmetric(horizontal: 18, vertical: 8)
     _views[0] = _selectedGroup == 'Группа'
-        ? Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Center(
-                child: Text(
-              entryOptions.isEmpty && _selectedGroup == 'Группа'
-                  ? 'Загружается список групп...'
-                  : 'Выберите группу, чтобы посмотреть её расписание',
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            )),
-          )
+        ? buildEmptyWelcome(entryOptions.isEmpty && _selectedGroup == 'Группа')
         : Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+            padding: const EdgeInsets.symmetric(vertical: 8),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                        color: Colors.black12,
-                        borderRadius: BorderRadius.circular(8)),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: layout.SlideTransitionDraft(
-                            child: AutoSizeText(
-                              '$_selectedDay, ${_selectedMonth.name}' +
-                                  (_replacementSelected ? ', Замены' : ''),
-                              key: ValueKey(
-                                  [_selectedDay, _replacementSelected]),
-                              textAlign: TextAlign.center,
-                              minFontSize: 8,
-                            ),
-                          ),
-                        ),
-                        Container(
-                          width: 1,
-                          color: Colors.black12,
-                        ),
-                        Expanded(
-                          child: layout.SlideTransitionDraft(
-                            child: AutoSizeText(
-                              _selectedWeek % 2 == 0
-                                  ? 'Нижняя неделя'
-                                  : 'Верхняя неделя',
-                              key: ValueKey(_selectedWeek),
-                              textAlign: TextAlign.center,
-                              minFontSize: 8,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    child: buildDatePreview(_selectedDay, _selectedMonth,
+                        _isReplacementSelected, _selectedWeek),
                   ),
                 ),
                 const SizedBox(height: 8),
-                Expanded(flex: 12, child: sheduleWidget),
+                Expanded(
+                    flex: 12,
+                    child: PageView.builder(
+                      scrollBehavior: layout.ScrollBehavior(),
+                      itemBuilder: (context, index) => Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 18),
+                        child: sheduleWidget,
+                      ),
+                      itemCount: 10,
+                    )),
                 const SizedBox(height: 18),
                 Expanded(
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          constraints: const BoxConstraints.expand(),
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                                color: _replacementSelected
-                                    ? Colors.orange
-                                    : Theme.of(context).primaryColorLight),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: InkWell(
-                              onTap: () => setState(() {
-                                    _replacementSelected =
-                                        !_replacementSelected;
-                                  }),
-                              borderRadius: BorderRadius.circular(6),
-                              child: layout.SlideTransitionDraft(
-                                child: AutoSizeText(
-                                  _replacementSelected
-                                      ? 'Смотреть расписание'
-                                      : 'Смотреть замены',
-                                  key: ValueKey(_replacementSelected),
-                                  minFontSize: 8,
-                                ),
-                              )),
-                        ),
-                      ),
-                    ],
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    child: buildReplacementSelectiong(
+                        Theme.of(context).primaryColorLight,
+                        Colors.orange,
+                        _isReplacementSelected,
+                        () => setState(() {
+                              _isReplacementSelected = !_isReplacementSelected;
+                            })),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -323,9 +234,9 @@ class _OverviewPageState extends State<OverviewPage> {
                                   SimpleDate(_selectedDay, _selectedMonth))
                               ?.item2 ==
                           null) {
-                        _replacementSelected = false;
+                        _isReplacementSelected = false;
                       } else {
-                        _replacementSelected = true;
+                        _isReplacementSelected = true;
                       }
                     }),
                   ),
@@ -494,7 +405,7 @@ class _OverviewPageState extends State<OverviewPage> {
                 .getReplacement(SimpleDate(_selectedDay, _selectedMonth))
                 ?.item2 !=
             null) {
-          _replacementSelected = true;
+          _isReplacementSelected = true;
         }
       });
     }

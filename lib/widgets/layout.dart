@@ -3,6 +3,7 @@
 import 'package:animations/animations.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:diary/models.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:jiffy/jiffy.dart';
 
@@ -202,7 +203,7 @@ class SlideTransitionDraft extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PageTransitionSwitcher(
-        duration: const Duration(milliseconds: 200),
+        duration: const Duration(milliseconds: 1000),
         transitionBuilder: (
           Widget child,
           Animation<double> primaryAnimation,
@@ -273,6 +274,12 @@ class ColoredTextButton extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8)),
                 primary: splashColor));
   }
+}
+
+class ScrollBehavior extends MaterialScrollBehavior {
+  @override
+  Set<PointerDeviceKind> get dragDevices =>
+      {PointerDeviceKind.touch, PointerDeviceKind.mouse};
 }
 
 Future<bool> checkInternetConnection(
