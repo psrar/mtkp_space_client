@@ -203,7 +203,7 @@ class SlideTransitionDraft extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PageTransitionSwitcher(
-        duration: const Duration(milliseconds: 1000),
+        duration: const Duration(milliseconds: 200),
         transitionBuilder: (
           Widget child,
           Animation<double> primaryAnimation,
@@ -230,6 +230,36 @@ class SlideTransitionDraft extends StatelessWidget {
                 ),
               ),
             ),
+          );
+        },
+        child: child);
+  }
+}
+
+class shaxis extends StatelessWidget {
+  final bool reverse;
+  final Widget child;
+  const shaxis({Key? key, required this.child, required this.reverse})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return PageTransitionSwitcher(
+        reverse: reverse,
+        duration: const Duration(milliseconds: 200),
+        transitionBuilder: (
+          Widget child,
+          Animation<double> primaryAnimation,
+          Animation<double> secondaryAnimation,
+        ) {
+          var c = CurveTween(curve: Curves.easeInOut);
+          primaryAnimation = primaryAnimation.drive(c);
+          secondaryAnimation = secondaryAnimation.drive(c);
+          return SharedAxisTransition(
+            animation: primaryAnimation,
+            secondaryAnimation: secondaryAnimation,
+            transitionType: SharedAxisTransitionType.vertical,
+            child: child,
           );
         },
         child: child);

@@ -28,17 +28,17 @@ final testTimetable = Timetable(
 final testWeekShedule = WeekShedule(Tuple3(testTimetable, [
   for (var i = 0; i < 6; i++)
     [
-      for (var i = 0; i < 6; i++)
+      for (var r = i; r < 6; r++)
         PairModel('Предмет', 'Учитель', '11${i.toString()}')
     ]
 ], [
   for (var i = 0; i < 6; i++)
     [
-      for (var i = 0; i < 6; i++)
-        PairModel('Предмет', 'Учитель', '22${i.toString()}')
+      for (var r = i; r < 6; r++)
+        PairModel('Эбабаба', 'Учитель', '22${i.toString()}')
     ]
 ]));
-const debug = true;
+const debug = false;
 
 class OverviewPage extends StatefulWidget {
   const OverviewPage({Key? key}) : super(key: key);
@@ -48,6 +48,8 @@ class OverviewPage extends StatefulWidget {
 }
 
 class _OverviewPageState extends State<OverviewPage> {
+  Key datePreviewKey = GlobalKey();
+
   late bool _isReplacementSelected = false;
   late int _selectedIndex;
   late int _selectedDay;
@@ -68,6 +70,8 @@ class _OverviewPageState extends State<OverviewPage> {
 
   int _selectedView = 0;
   final _views = <Widget>[Container(), Container()];
+
+  Map<String, String> lessons = {};
 
   @override
   void initState() {
@@ -93,8 +97,7 @@ class _OverviewPageState extends State<OverviewPage> {
     if (weekShedule == null) {
       border = Border.all(color: Colors.red, width: 2);
     } else {
-      _views[1] =
-          DomensView(existingPairs: weeksheduleToExistingPairs(weekShedule!));
+      _views[1] = DomensView(existingPairs: lessons);
 
       border = Border.all(
           color: _isReplacementSelected
@@ -192,25 +195,21 @@ class _OverviewPageState extends State<OverviewPage> {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 18),
                     child: buildDatePreview(_selectedDay, _selectedMonth,
-                        _isReplacementSelected, _selectedWeek),
+                        _isReplacementSelected, _selectedWeek, datePreviewKey),
                   ),
                 ),
                 const SizedBox(height: 8),
                 Expanded(
                     flex: 12,
-                    child: PageView.builder(
-                      scrollBehavior: layout.ScrollBehavior(),
-                      itemBuilder: (context, index) => Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 18),
-                        child: sheduleWidget,
-                      ),
-                      itemCount: 10,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 18.0),
+                      child: sheduleWidget,
                     )),
                 const SizedBox(height: 18),
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 18),
-                    child: buildReplacementSelectiong(
+                    child: buildReplacementSelection(
                         Theme.of(context).primaryColorLight,
                         Colors.orange,
                         _isReplacementSelected,
@@ -225,6 +224,7 @@ class _OverviewPageState extends State<OverviewPage> {
                     startIndex: _selectedIndex,
                     startWeek: _selectedWeek,
                     callback: (index, day, month, week) => setState(() {
+                      if (day != _selectedDay) datePreviewKey = GlobalKey();
                       _selectedIndex = index;
                       _selectedDay = day;
                       _selectedMonth = month;
@@ -247,8 +247,40 @@ class _OverviewPageState extends State<OverviewPage> {
 
     return Scaffold(
         appBar: AppBar(
-          title: const Text('Расписание',
-              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 24)),
+          title: layout.shaxis(
+            reverse: !_isReplacementSelected,
+            child: Row(
+              key: ValueKey(_isReplacementSelected),
+              children: [
+                Expanded(
+                  child: _isReplacementSelected
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const Text('Замены',
+                                textAlign: TextAlign.left,
+                                style: TextStyle(
+                                    fontWeight: FontWeight.w900, fontSize: 24)),
+                            Text(
+                              _lastReplacements == null
+                                  ? 'Данные о заменах устарели'
+                                  : 'Обновлено ' +
+                                      SimpleDate.fromDateTime(
+                                              _lastReplacements!)
+                                          .toSpeech() +
+                                      ' в ${_lastReplacements!.hour}:${_lastReplacements!.minute}',
+                              style: const TextStyle(fontSize: 10),
+                            ),
+                          ],
+                        )
+                      : const Text('Расписание',
+                          textAlign: TextAlign.left,
+                          style: TextStyle(
+                              fontWeight: FontWeight.w900, fontSize: 24)),
+                ),
+              ],
+            ),
+          ),
           actions: [_updateAction, _groupSelectorAction],
         ),
         bottomNavigationBar: NavigationBar(
@@ -357,8 +389,10 @@ class _OverviewPageState extends State<OverviewPage> {
                   Time(times[4][0], times[4][1]),
                   Time(times[5][0], times[5][1]));
             }
-            setState(
-                () => weekShedule = WeekShedule(Tuple3(timetable, up, down)));
+            setState(() {
+              weekShedule = WeekShedule(Tuple3(timetable, up, down));
+              buildDomensMap(weekShedule);
+            });
 
             if (weekShedule != null && !kIsWeb) {
               caching.saveWeekshedule(_selectedGroup, weekShedule!);
@@ -411,23 +445,53 @@ class _OverviewPageState extends State<OverviewPage> {
     }
   }
 
-  Map<String, String> weeksheduleToExistingPairs(WeekShedule inputShedule) {
-    var result = <String, String>{};
-    for (var element in inputShedule.weekLessons.item2) {
-      for (var pair in element) {
-        if (pair != null) {
-          result[pair.name] = pair.teacherReadable;
+  void buildDomensMap(WeekShedule? inputShedule) {
+    if (inputShedule != null) {
+      var result = <String, String>{};
+      var pairs =
+          inputShedule.weekLessons.item2 + inputShedule.weekLessons.item3;
+      for (var element in pairs) {
+        for (var pair in element) {
+          if (pair != null) {
+            String? mdk =
+                RegExp(r'([А-Я]+.\d{1,2}.\d{1,2})').stringMatch(pair.name);
+            if (mdk != null) {
+              String match = result.keys.firstWhere(
+                  (element) => element.contains(mdk),
+                  orElse: (() => ''));
+              if (match.isNotEmpty) {
+                if (match.length < pair.name.length) {
+                  result.remove(match);
+                  result[pair.name] = pair.teacherReadable;
+                }
+              } else {
+                result[pair.name] = pair.teacherReadable;
+              }
+            } else {
+              result[pair.name] = pair.teacherReadable;
+            }
+          }
         }
       }
-    }
-    for (var element in inputShedule.weekLessons.item3) {
-      for (var pair in element) {
-        if (pair != null) {
-          result[pair.name] = pair.teacherReadable;
-        }
-      }
-    }
 
-    return result;
+      lessons = result;
+    }
+  }
+
+  Map<String, String> resolveMDK(String lessonName) {
+    if (lessonName.isNotEmpty) {
+      String? mdk = RegExp(r'([А-Я]+.\d{1,2}.\d{1,2})').stringMatch(lessonName);
+      if (mdk != null) {
+        String match = lessons.keys
+            .firstWhere((element) => element.contains(mdk), orElse: (() => ''));
+
+        if (match.isNotEmpty) {
+          if (lessonName.length < match.length) {
+            return {match: lessons[match]!};
+          }
+        }
+      }
+    }
+    return {lessonName: ''};
   }
 }

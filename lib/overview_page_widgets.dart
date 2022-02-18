@@ -59,7 +59,7 @@ Widget buildEmptyWelcome(bool loading) => Padding(
     );
 
 Widget buildDatePreview(int selectedDay, Month selectedMonth,
-        bool replacementSelected, int selectedWeek) =>
+        bool replacementSelected, int selectedWeek, Key datePreviewKey) =>
     Container(
       decoration: BoxDecoration(
           color: Colors.black12, borderRadius: BorderRadius.circular(8)),
@@ -69,9 +69,9 @@ Widget buildDatePreview(int selectedDay, Month selectedMonth,
           Expanded(
             child: layout.SlideTransitionDraft(
               child: AutoSizeText(
-                '$selectedDay, ${selectedMonth.name}' +
+                '$selectedDay ${selectedMonth.ofName}' +
                     (replacementSelected ? ', Замены' : ''),
-                key: ValueKey([selectedDay, replacementSelected]),
+                key: datePreviewKey,
                 textAlign: TextAlign.center,
                 minFontSize: 8,
               ),
@@ -95,7 +95,7 @@ Widget buildDatePreview(int selectedDay, Month selectedMonth,
       ),
     );
 
-Widget buildReplacementSelectiong(Color sheduleColor, Color replacementColor,
+Widget buildReplacementSelection(Color sheduleColor, Color replacementColor,
         bool isReplacementSelected, Function callback) =>
     Row(
       children: [

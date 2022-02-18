@@ -111,6 +111,37 @@ class Month {
     }
   }
 
+  String get ofName {
+    switch (this) {
+      case Month.january:
+        return 'января';
+      case Month.february:
+        return 'февраля';
+      case Month.march:
+        return 'марта';
+      case Month.april:
+        return 'апреля';
+      case Month.may:
+        return 'мая';
+      case Month.june:
+        return 'июня';
+      case Month.july:
+        return 'июля';
+      case Month.august:
+        return 'августа';
+      case Month.september:
+        return 'сентября';
+      case Month.october:
+        return 'октября';
+      case Month.november:
+        return 'ноября';
+      case Month.december:
+        return 'декабря';
+      default:
+        throw Exception('Как появился 13 месяц?');
+    }
+  }
+
   int get num {
     switch (this) {
       case Month.january:
@@ -255,6 +286,10 @@ class SimpleDate {
   @override
   String toString() {
     return '$day, ${month.name}';
+  }
+
+  String toSpeech() {
+    return '$day ${month.ofName}';
   }
 }
 
