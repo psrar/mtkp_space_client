@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:jiffy/jiffy.dart';
 import 'package:tuple/tuple.dart';
 import 'package:url_launcher/url_launcher.dart' as url_launcher;
+import 'main.dart' as appGlobal;
 
 part 'overview_page_widgets.dart';
 
@@ -96,14 +97,14 @@ class _OverviewPageState extends State<OverviewPage> {
   Widget build(BuildContext context) {
     Border border;
     if (weekShedule == null) {
-      border = Border.all(color: Colors.red, width: 2);
+      border = Border.all(color: Theme.of(context).errorColor, width: 2);
     } else {
       _views[1] = DomensView(existingPairs: lessons);
 
       border = Border.all(
           color: _isReplacementSelected
-              ? Colors.orange
-              : Theme.of(context).primaryColorLight,
+              ? appGlobal.focusColor
+              : appGlobal.primaryColor,
           width: 1);
 
       if (_isReplacementSelected) {
@@ -214,8 +215,8 @@ class _OverviewPageState extends State<OverviewPage> {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 18),
                     child: buildReplacementSelection(
-                        Theme.of(context).primaryColorLight,
-                        Colors.orange,
+                        appGlobal.primaryColor,
+                        appGlobal.focusColor,
                         _replacementsLoadingState,
                         _isReplacementSelected,
                         () => setState(() {
@@ -450,11 +451,13 @@ class _OverviewPageState extends State<OverviewPage> {
           //     6000);
         } else if (res.item2 != null) {
           for (var pairs in res.item2!.values) {
-            for (var pair in pairs!) {
-              if (pair != null) {
-                var resolving = resolveDomens(pair.name);
-                pair.name = resolving.item1;
-                pair.teacherName = resolving.item2;
+            if (pairs != null) {
+              for (var pair in pairs) {
+                if (pair != null) {
+                  var resolving = resolveDomens(pair.name);
+                  pair.name = resolving.item1;
+                  pair.teacherName = resolving.item2;
+                }
               }
             }
           }

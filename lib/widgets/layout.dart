@@ -156,7 +156,10 @@ class GroupSelector extends StatelessWidget {
                 context: context,
                 builder: (context) {
                   return SimpleDialog(
-                    title: const Text('Выберите группу'),
+                    title: const Text('Выберите группу',
+                        style: TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.w900)),
+                    backgroundColor: const Color.fromARGB(255, 69, 69, 69),
                     insetPadding: const EdgeInsets.all(60),
                     children: [
                       SizedBox(
@@ -167,6 +170,7 @@ class GroupSelector extends StatelessWidget {
                               return ListTile(
                                 title: Text(
                                   options[index],
+                                  style: const TextStyle(color: Colors.white),
                                 ),
                                 onTap: () {
                                   Navigator.of(context).pop();

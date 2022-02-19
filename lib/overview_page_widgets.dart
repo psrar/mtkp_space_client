@@ -29,18 +29,18 @@ Widget buildEmptyReplacements(
           text: 'Проверить самостоятельно',
           onPressed: () async =>
               await url_launcher.launch('https://vk.com/mtkp_bmstu'),
-          foregroundColor: Colors.black87,
-          boxColor: Colors.red,
-          splashColor: Colors.red,
+          foregroundColor: Colors.white,
+          boxColor: appGlobal.errorColor,
+          splashColor: appGlobal.errorColor,
           outlined: true,
         ),
         const SizedBox(height: 12),
         layout.ColoredTextButton(
           text: 'Попробовать снова',
           onPressed: retryAction,
-          foregroundColor: Colors.black87,
-          boxColor: Colors.orange,
-          splashColor: Colors.orange,
+          foregroundColor: Colors.white,
+          boxColor: appGlobal.focusColor,
+          splashColor: appGlobal.focusColor,
           outlined: true,
         ),
       ],
@@ -130,7 +130,7 @@ Widget buildReplacementSelection(Color sheduleColor, Color replacementColor,
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(
-                                strokeWidth: 3, color: Colors.black38)))
+                                strokeWidth: 3, color: Colors.white)))
                 ])),
           ),
         ),

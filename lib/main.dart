@@ -5,6 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
 
+const Color primaryColor = Color.fromARGB(255, 0, 124, 249);
+const Color focusColor = Color.fromARGB(255, 255, 90, 131);
+const Color errorColor = Colors.red;
+
 void main() {
   DatabaseWorker();
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,26 +21,29 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final _font = GoogleFonts.rubik();
-    const Color _primaryColor = Color.fromARGB(255, 0, 124, 249);
+    final _font = GoogleFonts.rubik(color: Colors.white);
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: const OverviewPage(),
       theme: ThemeData(
           appBarTheme: const AppBarTheme(
-              color: Colors.white, foregroundColor: Colors.black, elevation: 1),
-          primaryColorLight: _primaryColor,
-          scaffoldBackgroundColor: const Color(0xFFfafafa),
+              color: Color.fromARGB(255, 69, 69, 69),
+              foregroundColor: Colors.white,
+              elevation: 1),
+          primaryColorLight: primaryColor,
+          focusColor: focusColor,
+          scaffoldBackgroundColor: const Color.fromARGB(255, 52, 52, 52),
           navigationBarTheme: const NavigationBarThemeData(
-              indicatorColor: _primaryColor,
+              backgroundColor: Color.fromARGB(255, 69, 69, 69),
+              indicatorColor: primaryColor,
               height: 50,
               labelBehavior: NavigationDestinationLabelBehavior.alwaysHide),
           textTheme: TextTheme(
               headline6: _font,
               headline5: _font,
               bodyText2: _font,
-              button: _font.copyWith(color: Colors.black, fontSize: 16))),
+              button: _font.copyWith(color: Colors.white, fontSize: 16))),
     );
   }
 }
