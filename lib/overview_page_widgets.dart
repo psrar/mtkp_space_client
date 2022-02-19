@@ -2,23 +2,23 @@ part of 'overview_page.dart';
 
 Widget buildEmptyReplacements(
         BuildContext context,
-        DateTime? lastReplacements,
+        int loadingState,
         Tuple2<SimpleDate, List<PairModel?>?>? selectedReplacement,
         Function retryAction) =>
     Center(
         child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        lastReplacements == DateTime(0)
+        loadingState == 0
             ? Column(children: const [
                 Text('Мы загружаем ваши замены'),
                 Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8.0),
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8.0),
                   child: LinearProgressIndicator(),
                 ),
               ])
             : Text(
-                lastReplacements == null
+                loadingState == 2
                     ? 'Не удалось получить замены'
                     : selectedReplacement == null
                         ? 'Замен на этот день не обнаружено'
@@ -96,7 +96,7 @@ Widget buildDatePreview(int selectedDay, Month selectedMonth,
     );
 
 Widget buildReplacementSelection(Color sheduleColor, Color replacementColor,
-        bool isReplacementSelected, Function callback) =>
+        int replacementState, bool isReplacementSelected, Function callback) =>
     Row(
       children: [
         Expanded(
@@ -112,15 +112,25 @@ Widget buildReplacementSelection(Color sheduleColor, Color replacementColor,
             child: InkWell(
                 onTap: () => callback(),
                 borderRadius: BorderRadius.circular(6),
-                child: layout.SlideTransitionDraft(
-                  child: AutoSizeText(
-                    isReplacementSelected
-                        ? 'Смотреть расписание'
-                        : 'Смотреть замены',
-                    key: ValueKey(isReplacementSelected),
-                    minFontSize: 8,
+                child: Stack(alignment: Alignment.center, children: [
+                  layout.SlideTransitionDraft(
+                    child: AutoSizeText(
+                      isReplacementSelected
+                          ? 'Смотреть расписание'
+                          : 'Смотреть замены',
+                      key: ValueKey(isReplacementSelected),
+                      minFontSize: 8,
+                    ),
                   ),
-                )),
+                  if (replacementState == 1)
+                    Container(
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 8),
+                        child: const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 3)))
+                ])),
           ),
         ),
       ],

@@ -35,7 +35,7 @@ final testWeekShedule = WeekShedule(Tuple3(testTimetable, [
   for (var i = 0; i < 6; i++)
     [
       for (var r = i; r < 6; r++)
-        PairModel('Эбабаба', 'Учитель', '22${i.toString()}')
+        PairModel('Эбабаба', 'Данаман', '22${i.toString()}')
     ]
 ]));
 const debug = false;
@@ -64,9 +64,10 @@ class _OverviewPageState extends State<OverviewPage> {
   List<PairModel?>? dayShedule;
   Timetable timetable = timetableEmpty;
 
-  var _replacements = Replacements(null);
+  Replacements? _replacements;
   Tuple2<SimpleDate, List<PairModel?>?>? _selectedReplacement;
   DateTime? _lastReplacements;
+  int _replacementsLoadingState = 0;
 
   int _selectedView = 0;
   final _views = <Widget>[Container(), Container()];
@@ -107,7 +108,7 @@ class _OverviewPageState extends State<OverviewPage> {
 
       if (_isReplacementSelected) {
         _selectedReplacement = _replacements
-            .getReplacement(SimpleDate(_selectedDay, _selectedMonth));
+            ?.getReplacement(SimpleDate(_selectedDay, _selectedMonth));
         dayShedule = _selectedReplacement?.item2;
       } else {
         dayShedule = _selectedWeek % 2 == 1
@@ -120,10 +121,13 @@ class _OverviewPageState extends State<OverviewPage> {
     if (_isReplacementSelected && dayShedule == null) {
       sheduleContentWidget = buildEmptyReplacements(
           context,
-          _lastReplacements,
+          _replacementsLoadingState,
           _selectedReplacement,
-          () => layout.checkInternetConnection(
-              context, () => _requestReplacements(_selectedGroup, 2)));
+          () => layout.checkInternetConnection(context, () {
+                _replacementsLoadingState = 0;
+                setState(() => _replacementsLoadingState = 0);
+                _requestReplacements(_selectedGroup, 2);
+              }));
     } else {
       sheduleContentWidget =
           SheduleContentWidget(dayShedule: Tuple2(timetable, dayShedule));
@@ -212,6 +216,7 @@ class _OverviewPageState extends State<OverviewPage> {
                     child: buildReplacementSelection(
                         Theme.of(context).primaryColorLight,
                         Colors.orange,
+                        _replacementsLoadingState,
                         _isReplacementSelected,
                         () => setState(() {
                               _isReplacementSelected = !_isReplacementSelected;
@@ -230,7 +235,7 @@ class _OverviewPageState extends State<OverviewPage> {
                       _selectedMonth = month;
                       _selectedWeek = week;
                       if (_replacements
-                              .getReplacement(
+                              ?.getReplacement(
                                   SimpleDate(_selectedDay, _selectedMonth))
                               ?.item2 ==
                           null) {
@@ -247,7 +252,7 @@ class _OverviewPageState extends State<OverviewPage> {
 
     return Scaffold(
         appBar: AppBar(
-          title: layout.shaxis(
+          title: layout.SharedAxisSwitcher(
             reverse: !_isReplacementSelected,
             child: Row(
               key: ValueKey(_isReplacementSelected),
@@ -268,7 +273,7 @@ class _OverviewPageState extends State<OverviewPage> {
                                       SimpleDate.fromDateTime(
                                               _lastReplacements!)
                                           .toSpeech() +
-                                      ' в ${_lastReplacements!.hour}:${_lastReplacements!.minute}',
+                                      ' в ${_lastReplacements!.hour.toString().padLeft(2, '0')}:${_lastReplacements!.minute.toString().padLeft(2, '0')}',
                               style: const TextStyle(fontSize: 10),
                             ),
                           ],
@@ -314,16 +319,32 @@ class _OverviewPageState extends State<OverviewPage> {
       timetable = testTimetable;
       _selectedGroup = 'Тест';
     }
+
+    buildDomensMap(weekShedule);
   }
 
   Future<void> tryLoadCache() async {
     if (!kIsWeb) {
-      await caching.loadWeekShedule().then((value) {
+      await caching.loadWeekSheduleCache().then((value) {
         if (value != null) {
           setState(() {
             _selectedGroup = value.item1;
             timetable = value.item2;
             weekShedule = value.item3;
+          });
+        }
+      });
+
+      await caching.loadReplacementsCache().then((value) {
+        if (value != null) {
+          setState(() {
+            _replacements = value.item2;
+            _lastReplacements = value.item1;
+            _replacementsLoadingState = 1;
+            if (_replacements
+                    ?.getReplacement(SimpleDate(_selectedDay, _selectedMonth))
+                    ?.item2 !=
+                null) _isReplacementSelected = true;
           });
         }
       });
@@ -406,7 +427,7 @@ class _OverviewPageState extends State<OverviewPage> {
   }
 
   Future<void> _requestReplacements(String group, int rangeFromToday) async {
-    setState(() => _lastReplacements = DateTime(0));
+    _replacementsLoadingState = 0;
     var dates = [
       for (var i = 1; i <= rangeFromToday; i++) now.subtract(Duration(days: i)),
       now,
@@ -422,11 +443,11 @@ class _OverviewPageState extends State<OverviewPage> {
         if ((date.isToday || date == nextDay) &&
             res.item1 != null &&
             res.item1 != '') {
-          setState(() => _lastReplacements = null);
-          layout.showTextSnackBar(
-              context,
-              'Не удалось получить замены. Узнайте их вручную.\n' + res.item1!,
-              6000);
+          _replacementsLoadingState = 2;
+          // layout.showTextSnackBar(
+          //     context,
+          //     'Не удалось получить замены. Узнайте их вручную.\n' + res.item1!,
+          //     6000);
         } else if (res.item2 != null) {
           results.addAll(res.item2!);
         }
@@ -436,12 +457,13 @@ class _OverviewPageState extends State<OverviewPage> {
         _replacements = Replacements(results);
         _lastReplacements = DateTime.now();
         if (_replacements
-                .getReplacement(SimpleDate(_selectedDay, _selectedMonth))
+                ?.getReplacement(SimpleDate(_selectedDay, _selectedMonth))
                 ?.item2 !=
             null) {
           _isReplacementSelected = true;
         }
       });
+      caching.saveReplacements(_replacements!, _lastReplacements);
     }
   }
 

@@ -236,10 +236,11 @@ class SlideTransitionDraft extends StatelessWidget {
   }
 }
 
-class shaxis extends StatelessWidget {
+class SharedAxisSwitcher extends StatelessWidget {
   final bool reverse;
   final Widget child;
-  const shaxis({Key? key, required this.child, required this.reverse})
+  const SharedAxisSwitcher(
+      {Key? key, required this.child, required this.reverse})
       : super(key: key);
 
   @override
@@ -252,10 +253,11 @@ class shaxis extends StatelessWidget {
           Animation<double> primaryAnimation,
           Animation<double> secondaryAnimation,
         ) {
-          var c = CurveTween(curve: Curves.easeInOut);
+          var c = CurveTween(curve: Curves.easeInOutCubic);
           primaryAnimation = primaryAnimation.drive(c);
           secondaryAnimation = secondaryAnimation.drive(c);
           return SharedAxisTransition(
+            fillColor: Colors.transparent,
             animation: primaryAnimation,
             secondaryAnimation: secondaryAnimation,
             transitionType: SharedAxisTransitionType.vertical,

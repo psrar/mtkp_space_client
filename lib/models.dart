@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:json_annotation/json_annotation.dart';
 import 'package:tuple/tuple.dart';
 
@@ -79,6 +81,8 @@ class Month {
 
   @override
   String toString() => 'Month.$_value';
+
+  static Month fromNum(int num) => Month.all[num];
 
   String get name {
     switch (this) {
@@ -232,21 +236,51 @@ class PairModel {
 }
 
 class Replacements {
-  late final Map<SimpleDate, List<PairModel?>?>? _replacements;
+  late final Map<SimpleDate, List<PairModel?>?>? replacements;
 
-  Replacements(Map<SimpleDate, List<PairModel?>?>? replacements) {
-    _replacements = replacements;
+  Replacements(this.replacements);
+  Replacements.fromJson(Map<String, dynamic> json) {
+    if (json.isEmpty) return;
+
+    replacements = {};
+    for (var entry in json.entries) {
+      var pairs = <PairModel?>[];
+      for (var i = 0; i < 6; i++) {
+        var pair = entry.value[i.toString()];
+        pairs.add(pair == null
+            ? null
+            : PairModel(pair['name'], pair['teacher_name'], pair['room']));
+      }
+      replacements![SimpleDate.fromNum(entry.key)] = pairs;
+    }
   }
 
   Tuple2<SimpleDate, List<PairModel?>?>? getReplacement(SimpleDate simpleDate) {
-    if (_replacements != null && _replacements!.containsKey(simpleDate)) {
-      return Tuple2(simpleDate, _replacements![simpleDate]);
+    if (replacements != null && replacements!.containsKey(simpleDate)) {
+      return Tuple2(simpleDate, replacements![simpleDate]);
     } else {
       return null;
     }
   }
 
-  int get count => _replacements?.length ?? 0;
+  int get count => replacements?.length ?? 0;
+
+  Map<String, dynamic> toJson() {
+    if (replacements == null) return {};
+
+    var result = <String, dynamic>{};
+    for (var repl in replacements!.entries) {
+      var pairs = {};
+      for (var i = 0; i < 6; i++) {
+        pairs[i.toString()] = repl.value?[i]?.toJson();
+      }
+      result[repl.key.toNum().toString()] = pairs;
+    }
+    String jsonString = jsonEncode(result);
+    Map<String, dynamic> js = jsonDecode(jsonString);
+    Replacements.fromJson(js);
+    return result;
+  }
 }
 
 ///Класс, содержащий информацию о начале и конце занятия
@@ -272,6 +306,11 @@ class SimpleDate {
     day = dateTime.day;
     month = Month.all[dateTime.month - 1];
   }
+  SimpleDate.fromNum(String num) {
+    var n = num.split('.');
+    day = int.parse(n.first);
+    month = Month.fromNum(int.parse(n.last) - 1);
+  }
 
   bool get isToday =>
       DateTime.now().day == day && DateTime.now().month == month.num;
@@ -288,9 +327,9 @@ class SimpleDate {
     return '$day, ${month.name}';
   }
 
-  String toSpeech() {
-    return '$day ${month.ofName}';
-  }
+  String toSpeech() => '$day ${month.ofName}';
+
+  String toNum() => '$day.${month.num}';
 }
 
 ///Расписание начала и конца пар
