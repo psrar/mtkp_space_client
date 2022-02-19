@@ -122,14 +122,15 @@ Widget buildReplacementSelection(Color sheduleColor, Color replacementColor,
                       minFontSize: 8,
                     ),
                   ),
-                  if (replacementState == 1)
+                  if (replacementState == 0)
                     Container(
                         alignment: Alignment.centerRight,
                         padding: const EdgeInsets.only(right: 8),
                         child: const SizedBox(
                             width: 20,
                             height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 3)))
+                            child: CircularProgressIndicator(
+                                strokeWidth: 3, color: Colors.black38)))
                 ])),
           ),
         ),

@@ -355,7 +355,7 @@ class _OverviewPageState extends State<OverviewPage> {
     try {
       await DatabaseWorker.currentDatabaseWorker!
           .getAllGroups()
-          .then((value) => entryOptions = value);
+          .then((value) => setState(() => entryOptions = value));
     } catch (e) {
       layout.showTextSnackBar(
           context, 'Не удаётся загрузить данные о группах.', 2000);
@@ -443,12 +443,21 @@ class _OverviewPageState extends State<OverviewPage> {
         if ((date.isToday || date == nextDay) &&
             res.item1 != null &&
             res.item1 != '') {
-          _replacementsLoadingState = 2;
+          setState(() => _replacementsLoadingState = 2);
           // layout.showTextSnackBar(
           //     context,
           //     'Не удалось получить замены. Узнайте их вручную.\n' + res.item1!,
           //     6000);
         } else if (res.item2 != null) {
+          for (var pairs in res.item2!.values) {
+            for (var pair in pairs!) {
+              if (pair != null) {
+                var resolving = resolveDomens(pair.name);
+                pair.name = resolving.item1;
+                pair.teacherName = resolving.item2;
+              }
+            }
+          }
           results.addAll(res.item2!);
         }
       }
@@ -456,6 +465,7 @@ class _OverviewPageState extends State<OverviewPage> {
       setState(() {
         _replacements = Replacements(results);
         _lastReplacements = DateTime.now();
+        _replacementsLoadingState = 1;
         if (_replacements
                 ?.getReplacement(SimpleDate(_selectedDay, _selectedMonth))
                 ?.item2 !=
@@ -500,20 +510,20 @@ class _OverviewPageState extends State<OverviewPage> {
     }
   }
 
-  Map<String, String> resolveMDK(String lessonName) {
+  Tuple2<String, String> resolveDomens(String lessonName) {
     if (lessonName.isNotEmpty) {
       String? mdk = RegExp(r'([А-Я]+.\d{1,2}.\d{1,2})').stringMatch(lessonName);
-      if (mdk != null) {
-        String match = lessons.keys
-            .firstWhere((element) => element.contains(mdk), orElse: (() => ''));
+      String match = lessons.keys.firstWhere(
+          (element) =>
+              (mdk != null && element.contains(mdk)) || element == lessonName,
+          orElse: (() => ''));
 
-        if (match.isNotEmpty) {
-          if (lessonName.length < match.length) {
-            return {match: lessons[match]!};
-          }
+      if (match.isNotEmpty) {
+        if (lessonName == match || lessonName.length < match.length) {
+          return Tuple2(match, lessons[match]!);
         }
       }
     }
-    return {lessonName: ''};
+    return Tuple2(lessonName, '');
   }
 }

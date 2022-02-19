@@ -208,9 +208,9 @@ class Month {
 
 @JsonSerializable(fieldRename: FieldRename.snake)
 class PairModel {
-  final String name;
-  final String? teacherName;
-  final String? room;
+  String name;
+  String? teacherName;
+  String? room;
 
   ///Создает модель пары по расписанию. Week - обозначение нечетности (1) и четности (2) недели. Если предмет есть на обеих неделях, необходимо указать число (3).
   PairModel(this.name, this.teacherName, this.room);
