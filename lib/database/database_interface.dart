@@ -1,6 +1,6 @@
 import 'dart:developer';
 
-import 'package:diary/models.dart';
+import 'package:mtkp/models.dart';
 import 'package:supabase/supabase.dart';
 import 'package:tuple/tuple.dart';
 

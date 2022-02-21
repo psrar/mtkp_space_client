@@ -9,7 +9,7 @@ Widget buildEmptyReplacements(
         child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        loadingState == 0
+        loadingState == 0 && selectedReplacement == null
             ? Column(children: const [
                 Text('Мы загружаем ваши замены'),
                 Padding(

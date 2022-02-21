@@ -244,6 +244,10 @@ class Replacements {
 
     replacements = {};
     for (var entry in json.entries) {
+      if (entry.value == '') {
+        replacements![SimpleDate.fromNum(entry.key)] = null;
+        continue;
+      }
       var pairs = <PairModel?>[];
       for (var i = 0; i < 6; i++) {
         var pair = entry.value[i.toString()];
@@ -270,11 +274,15 @@ class Replacements {
 
     var result = <String, dynamic>{};
     for (var repl in replacements!.entries) {
+      if (repl.value == null) {
+        result[repl.key.toNum()] = '';
+        continue;
+      }
       var pairs = {};
       for (var i = 0; i < 6; i++) {
         pairs[i.toString()] = repl.value?[i]?.toJson();
       }
-      result[repl.key.toNum().toString()] = pairs;
+      result[repl.key.toNum()] = pairs;
     }
     String jsonString = jsonEncode(result);
     Map<String, dynamic> js = jsonDecode(jsonString);

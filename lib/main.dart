@@ -1,6 +1,6 @@
 // import 'package:diary/background_worker.dart';
-import 'package:diary/database/database_interface.dart';
-import 'package:diary/overview_page.dart';
+import 'package:mtkp/database/database_interface.dart';
+import 'package:mtkp/overview_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';

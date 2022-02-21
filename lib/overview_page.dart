@@ -1,12 +1,12 @@
 import 'dart:developer';
 
 import 'package:auto_size_text/auto_size_text.dart';
-import 'package:diary/caching.dart' as caching;
-import 'package:diary/database/database_interface.dart';
-import 'package:diary/domens_view.dart';
-import 'package:diary/models.dart';
-import 'package:diary/widgets/layout.dart' as layout;
-import 'package:diary/widgets/shedule.dart';
+import 'package:mtkp/caching.dart' as caching;
+import 'package:mtkp/database/database_interface.dart';
+import 'package:mtkp/domens_view.dart';
+import 'package:mtkp/models.dart';
+import 'package:mtkp/widgets/layout.dart' as layout;
+import 'package:mtkp/widgets/shedule.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:jiffy/jiffy.dart';
@@ -65,7 +65,7 @@ class _OverviewPageState extends State<OverviewPage> {
   List<PairModel?>? dayShedule;
   Timetable timetable = timetableEmpty;
 
-  Replacements? _replacements;
+  Replacements _replacements = Replacements(null);
   Tuple2<SimpleDate, List<PairModel?>?>? _selectedReplacement;
   DateTime? _lastReplacements;
   int _replacementsLoadingState = 0;
@@ -109,7 +109,7 @@ class _OverviewPageState extends State<OverviewPage> {
 
       if (_isReplacementSelected) {
         _selectedReplacement = _replacements
-            ?.getReplacement(SimpleDate(_selectedDay, _selectedMonth));
+            .getReplacement(SimpleDate(_selectedDay, _selectedMonth));
         dayShedule = _selectedReplacement?.item2;
       } else {
         dayShedule = _selectedWeek % 2 == 1
@@ -236,7 +236,7 @@ class _OverviewPageState extends State<OverviewPage> {
                       _selectedMonth = month;
                       _selectedWeek = week;
                       if (_replacements
-                              ?.getReplacement(
+                              .getReplacement(
                                   SimpleDate(_selectedDay, _selectedMonth))
                               ?.item2 ==
                           null) {
@@ -290,17 +290,18 @@ class _OverviewPageState extends State<OverviewPage> {
           actions: [_updateAction, _groupSelectorAction],
         ),
         bottomNavigationBar: NavigationBar(
+            animationDuration: const Duration(milliseconds: 400),
             selectedIndex: _selectedView,
             onDestinationSelected: (index) =>
                 setState(() => _selectedView = index),
             destinations: const [
               NavigationDestination(
-                  icon: Icon(Icons.view_day_rounded),
+                  icon: Icon(Icons.view_day_rounded, color: Colors.grey),
                   selectedIcon:
                       Icon(Icons.view_day_rounded, color: Colors.white),
                   label: 'Расписание'),
               NavigationDestination(
-                  icon: Icon(Icons.school_rounded),
+                  icon: Icon(Icons.school_rounded, color: Colors.grey),
                   selectedIcon: Icon(Icons.school_rounded, color: Colors.white),
                   label: 'Преподаватели и предметы'),
             ]),
@@ -337,17 +338,15 @@ class _OverviewPageState extends State<OverviewPage> {
       });
 
       await caching.loadReplacementsCache().then((value) {
-        if (value != null) {
-          setState(() {
-            _replacements = value.item2;
-            _lastReplacements = value.item1;
-            _replacementsLoadingState = 1;
-            if (_replacements
-                    ?.getReplacement(SimpleDate(_selectedDay, _selectedMonth))
-                    ?.item2 !=
-                null) _isReplacementSelected = true;
-          });
-        }
+        setState(() {
+          _replacements = value.item2;
+          _lastReplacements = value.item1;
+          _replacementsLoadingState = 1;
+          if (_replacements
+                  .getReplacement(SimpleDate(_selectedDay, _selectedMonth))
+                  ?.item2 !=
+              null) _isReplacementSelected = true;
+        });
       });
     }
   }
@@ -470,13 +469,13 @@ class _OverviewPageState extends State<OverviewPage> {
         _lastReplacements = DateTime.now();
         _replacementsLoadingState = 1;
         if (_replacements
-                ?.getReplacement(SimpleDate(_selectedDay, _selectedMonth))
+                .getReplacement(SimpleDate(_selectedDay, _selectedMonth))
                 ?.item2 !=
             null) {
           _isReplacementSelected = true;
         }
       });
-      caching.saveReplacements(_replacements!, _lastReplacements);
+      caching.saveReplacements(_replacements, _lastReplacements);
     }
   }
 

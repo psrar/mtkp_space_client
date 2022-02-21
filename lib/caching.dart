@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 
-import 'package:diary/models.dart';
+import 'package:mtkp/models.dart';
 import 'package:path_provider/path_provider.dart' show getTemporaryDirectory;
 import 'package:tuple/tuple.dart';
 
@@ -38,21 +38,24 @@ Future<Tuple3<String, Timetable, WeekShedule?>?> loadWeekSheduleCache() async {
   }
 }
 
-Future<Tuple2<DateTime?, Replacements>?> loadReplacementsCache() async {
+Future<Tuple2<DateTime?, Replacements>> loadReplacementsCache() async {
   try {
     final file = await getCacheFilePath(replacementsCachePath);
     if (file.existsSync()) {
       final repl = (await file.readAsString()).split('!');
       if (repl.isNotEmpty) {
         DateTime? stamp = DateTime.tryParse(repl.first);
-        var replacements = Replacements.fromJson(jsonDecode(repl[1]));
+        Map<String, dynamic> json = jsonDecode(repl[1]);
+        if (json.isEmpty) return Tuple2(stamp, Replacements(null));
+
+        Replacements replacements = Replacements.fromJson(json);
         return Tuple2(stamp, replacements);
       }
     }
-    return null;
+    return Tuple2(null, Replacements(null));
   } catch (e) {
     log(e.toString());
-    return null;
+    return Tuple2(null, Replacements(null));
   }
 }
 
