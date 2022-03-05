@@ -156,8 +156,7 @@ class GroupSelector extends StatelessWidget {
                 builder: (context) {
                   return SimpleDialog(
                     title: const Text('Выберите группу',
-                        style: TextStyle(
-                            color: Colors.white, fontWeight: FontWeight.w900)),
+                        style: TextStyle(color: Colors.white, fontSize: 22)),
                     backgroundColor: const Color.fromARGB(255, 69, 69, 69),
                     insetPadding: const EdgeInsets.all(60),
                     children: [
@@ -297,17 +296,19 @@ class ColoredTextButton extends StatelessWidget {
     return TextButton(
         onPressed: () => onPressed.call(),
         child: Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.all(14.0),
           child: Text(text,
               style: TextStyle(color: foregroundColor, fontSize: 16)),
         ),
         style: outlined == true
             ? TextButton.styleFrom(
+                padding: EdgeInsets.zero,
                 shape: RoundedRectangleBorder(
                     side: BorderSide(color: boxColor),
                     borderRadius: BorderRadius.circular(8)),
                 primary: splashColor)
             : TextButton.styleFrom(
+                padding: EdgeInsets.zero,
                 backgroundColor: boxColor,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8)),

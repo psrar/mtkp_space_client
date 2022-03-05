@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:animations/animations.dart';
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:mtkp/views.dart/settings_view.dart';
 import 'package:mtkp/workers/caching.dart' as caching;
 import 'package:mtkp/database/database_interface.dart';
 import 'package:mtkp/views.dart/domens_view.dart';
@@ -15,7 +16,7 @@ import 'package:flutter/material.dart';
 import 'package:jiffy/jiffy.dart';
 import 'package:tuple/tuple.dart';
 import 'package:url_launcher/url_launcher.dart' as url_launcher;
-import '../main.dart' as appGlobal;
+import 'package:mtkp/main.dart' as appGlobal;
 
 part 'overview_page_widgets.dart';
 
@@ -28,7 +29,7 @@ final testTimetable = Timetable(
     Time('12:40', '14:00'),
     Time('14:30', '16:00'),
     Time('16:10', '17:40'),
-    Time('00:00', '99:99'));
+    Time('18:00', '19:30'));
 final testWeekShedule = WeekShedule(Tuple3(testTimetable, [
   for (var i = 0; i < 6; i++)
     [
@@ -73,8 +74,8 @@ class _OverviewPageState extends State<OverviewPage> {
   DateTime? _lastReplacements;
   int _replacementsLoadingState = 0;
 
-  int _selectedView = 0;
-  final _views = <Widget>[Container(), Container()];
+  int _selectedView = 2;
+  List<Widget> _views = List<Widget>.filled(3, Container());
   bool appbarAnimationDirection = false;
 
   Map<String, String> lessons = {};
@@ -95,16 +96,16 @@ class _OverviewPageState extends State<OverviewPage> {
     _selectedWeek = Jiffy(date).week;
 
     initialization();
+
+    _views = List<Widget>.filled(3, Container());
   }
 
   @override
   Widget build(BuildContext context) {
     Border border;
     if (weekShedule == null) {
-      border = Border.all(color: Theme.of(context).errorColor, width: 2);
+      border = Border.all(color: appGlobal.errorColor, width: 2);
     } else {
-      _views[1] = DomensView(existingPairs: lessons);
-
       border = Border.all(
           color: _isReplacementSelected
               ? appGlobal.focusColor
@@ -121,6 +122,15 @@ class _OverviewPageState extends State<OverviewPage> {
             : weekShedule!.weekLessons.item3[_selectedIndex];
       }
     }
+
+    _views[1] = _selectedGroup == 'Группа'
+        ? EmptyWelcome(
+            loading: entryOptions.isEmpty && _selectedGroup == 'Группа')
+        : DomensView(existingPairs: lessons);
+    _views[2] = _selectedGroup == 'Группа'
+        ? EmptyWelcome(
+            loading: entryOptions.isEmpty && _selectedGroup == 'Группа')
+        : SettingsView();
 
     late final Widget sheduleContentWidget;
     if (_isReplacementSelected && dayShedule == null) {
@@ -170,30 +180,25 @@ class _OverviewPageState extends State<OverviewPage> {
 
     final _groupSelectorAction = Padding(
       padding: const EdgeInsets.only(top: 10, bottom: 10, right: 16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          layout.GroupSelector(
-            selectedGroup: _selectedGroup,
-            options: entryOptions,
-            callback: (value) {
-              checkInternetConnection(context, () async {
-                setState(() {
-                  weekShedule = null;
-                  _replacements = Replacements(null);
-                  _selectedGroup = value;
-                });
-                await Future.wait([
-                  _requestShedule(_selectedGroup),
-                  _requestReplacements(_selectedGroup, 2)
-                ]).whenComplete(() => setState(() {}));
-              });
-            },
-          ),
-        ],
+      child: layout.GroupSelector(
+        selectedGroup: _selectedGroup,
+        options: entryOptions,
+        callback: (value) {
+          checkInternetConnection(context, () async {
+            setState(() {
+              weekShedule = null;
+              _replacements = Replacements(null);
+              _selectedGroup = value;
+            });
+            await Future.wait([
+              _requestShedule(_selectedGroup),
+              _requestReplacements(_selectedGroup, 2)
+            ]).whenComplete(() => setState(() {}));
+          });
+        },
       ),
     );
-// const EdgeInsets.symmetric(horizontal: 18, vertical: 8)
+
     _views[0] = _selectedGroup == 'Группа'
         ? EmptyWelcome(
             loading: entryOptions.isEmpty && _selectedGroup == 'Группа')
@@ -261,47 +266,53 @@ class _OverviewPageState extends State<OverviewPage> {
             ),
           );
 
+    late Widget title;
+    switch (_selectedView) {
+      case 0:
+        title = layout.SharedAxisSwitcher(
+          reverse: !_isReplacementSelected,
+          child: Row(
+            key: ValueKey(_isReplacementSelected),
+            children: [
+              Expanded(
+                child: _isReplacementSelected
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const Text('Замены'),
+                          Text(
+                            _lastReplacements == null
+                                ? 'Данные о заменах устарели'
+                                : 'Обновлено ' +
+                                    SimpleDate.fromDateTime(_lastReplacements!)
+                                        .toSpeech() +
+                                    ' в ${_lastReplacements!.hour.toString().padLeft(2, '0')}:${_lastReplacements!.minute.toString().padLeft(2, '0')}',
+                            style: const TextStyle(fontSize: 10),
+                          ),
+                        ],
+                      )
+                    : const Text('Расписание'),
+              ),
+            ],
+          ),
+        );
+        break;
+      case 1:
+        title = Row(children: [Text('Предметы')]);
+        break;
+      case 2:
+        title = Row(children: [Text('Настройки')]);
+        break;
+      default:
+        title = Container(color: Colors.purpleAccent);
+    }
+
     return Scaffold(
         appBar: AppBar(
           title: layout.SharedAxisSwitcher(
               reverse: appbarAnimationDirection,
               transitionType: SharedAxisTransitionType.horizontal,
-              child: _selectedView == 0
-                  ? layout.SharedAxisSwitcher(
-                      key: ValueKey(appbarAnimationDirection),
-                      reverse: !_isReplacementSelected,
-                      child: Row(
-                        key: ValueKey(_isReplacementSelected),
-                        children: [
-                          Expanded(
-                            child: _isReplacementSelected
-                                ? Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
-                                    children: [
-                                      const Text('Замены'),
-                                      Text(
-                                        _lastReplacements == null
-                                            ? 'Данные о заменах устарели'
-                                            : 'Обновлено ' +
-                                                SimpleDate.fromDateTime(
-                                                        _lastReplacements!)
-                                                    .toSpeech() +
-                                                ' в ${_lastReplacements!.hour.toString().padLeft(2, '0')}:${_lastReplacements!.minute.toString().padLeft(2, '0')}',
-                                        style: const TextStyle(fontSize: 10),
-                                      ),
-                                    ],
-                                  )
-                                : const Text('Расписание'),
-                          ),
-                        ],
-                      ),
-                    )
-                  : Row(
-                      children: [
-                        Text('Предметы'),
-                      ],
-                    )),
+              child: Container(key: ValueKey(_selectedView), child: title)),
           actions: [_updateAction, _groupSelectorAction],
         ),
         bottomNavigationBar: NavigationBar(

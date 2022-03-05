@@ -11,22 +11,25 @@ class DomensView extends StatelessWidget {
     existingPairs.forEach((key, value) => pairs.add([key, value]));
     pairs.sort((a, b) => a[0].compareTo(b[0]));
 
-    return ListView.separated(
-      padding: const EdgeInsets.all(6),
-      itemBuilder: (context, index) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            pairs[index][0],
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 4),
-          Text('Преподаватель: ' + pairs[index][1])
-        ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      child: ListView.separated(
+        padding: const EdgeInsets.all(6),
+        itemBuilder: (context, index) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              pairs[index][0],
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            Text('Преподаватель: ' + pairs[index][1])
+          ],
+        ),
+        separatorBuilder: (context, index) =>
+            const Divider(color: Colors.black26),
+        itemCount: pairs.length,
       ),
-      separatorBuilder: (context, index) =>
-          const Divider(color: Colors.black26),
-      itemCount: pairs.length,
     );
   }
 }

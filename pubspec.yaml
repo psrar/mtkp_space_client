@@ -45,6 +45,7 @@ dependencies:
   android_alarm_manager_plus: ^2.0.5
   fluttertoast: ^8.0.8
   http: ^0.13.4
+  disable_battery_optimization: ^1.1.0+1
 
 dev_dependencies:
   build_runner: ^2.0.0
