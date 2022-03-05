@@ -1,11 +1,21 @@
 part of 'overview_page.dart';
 
-Widget buildEmptyReplacements(
-        BuildContext context,
-        int loadingState,
-        Tuple2<SimpleDate, List<PairModel?>?>? selectedReplacement,
-        Function retryAction) =>
-    Center(
+class EmptyReplacements extends StatelessWidget {
+  final BuildContext context;
+  final int loadingState;
+  final Tuple2<SimpleDate, List<PairModel?>?>? selectedReplacement;
+  final Function retryAction;
+  const EmptyReplacements(
+      {Key? key,
+      required this.context,
+      required this.loadingState,
+      required this.selectedReplacement,
+      required this.retryAction})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
         child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -45,8 +55,16 @@ Widget buildEmptyReplacements(
         ),
       ],
     ));
+  }
+}
 
-Widget buildEmptyWelcome(bool loading) => Padding(
+class EmptyWelcome extends StatelessWidget {
+  final bool loading;
+  const EmptyWelcome({Key? key, required this.loading}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Center(
           child: Text(
@@ -57,10 +75,28 @@ Widget buildEmptyWelcome(bool loading) => Padding(
         textAlign: TextAlign.center,
       )),
     );
+  }
+}
 
-Widget buildDatePreview(int selectedDay, Month selectedMonth,
-        bool replacementSelected, int selectedWeek, Key datePreviewKey) =>
-    Container(
+class DatePreview extends StatelessWidget {
+  final int selectedDay;
+  final Month selectedMonth;
+  final bool replacementSelected;
+  final int selectedWeek;
+  final Key? datePreviewKey;
+  const DatePreview(
+      {Key? key,
+      required this.selectedDay,
+      required this.selectedMonth,
+      required this.replacementSelected,
+      required this.selectedWeek,
+      required this.datePreviewKey})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: key,
       decoration: BoxDecoration(
           color: Colors.black12, borderRadius: BorderRadius.circular(8)),
       child: Row(
@@ -94,10 +130,27 @@ Widget buildDatePreview(int selectedDay, Month selectedMonth,
         ],
       ),
     );
+  }
+}
 
-Widget buildReplacementSelection(Color sheduleColor, Color replacementColor,
-        int replacementState, bool isReplacementSelected, Function callback) =>
-    Row(
+class ReplacementSelection extends StatelessWidget {
+  final Color sheduleColor;
+  final Color replacementColor;
+  final int replacementState;
+  final bool isReplacementSelected;
+  final Function callback;
+  const ReplacementSelection(
+      {Key? key,
+      required this.sheduleColor,
+      required this.replacementColor,
+      required this.replacementState,
+      required this.isReplacementSelected,
+      required this.callback})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
       children: [
         Expanded(
           child: AnimatedContainer(
@@ -136,3 +189,5 @@ Widget buildReplacementSelection(Color sheduleColor, Color replacementColor,
         ),
       ],
     );
+  }
+}

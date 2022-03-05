@@ -1,7 +1,6 @@
 // ignore_for_file: file_names
 
 import 'package:animations/animations.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:mtkp/models.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -243,15 +242,19 @@ class SlideTransitionDraft extends StatelessWidget {
 class SharedAxisSwitcher extends StatelessWidget {
   final bool reverse;
   final Widget child;
+  final SharedAxisTransitionType transitionType;
   const SharedAxisSwitcher(
-      {Key? key, required this.child, required this.reverse})
+      {Key? key,
+      required this.child,
+      required this.reverse,
+      this.transitionType = SharedAxisTransitionType.vertical})
       : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return PageTransitionSwitcher(
         reverse: reverse,
-        duration: const Duration(milliseconds: 200),
+        duration: const Duration(milliseconds: 400),
         transitionBuilder: (
           Widget child,
           Animation<double> primaryAnimation,
@@ -264,7 +267,7 @@ class SharedAxisSwitcher extends StatelessWidget {
             fillColor: Colors.transparent,
             animation: primaryAnimation,
             secondaryAnimation: secondaryAnimation,
-            transitionType: SharedAxisTransitionType.vertical,
+            transitionType: transitionType,
             child: child,
           );
         },
@@ -316,17 +319,6 @@ class ScrollBehavior extends MaterialScrollBehavior {
   @override
   Set<PointerDeviceKind> get dragDevices =>
       {PointerDeviceKind.touch, PointerDeviceKind.mouse};
-}
-
-Future<bool> checkInternetConnection(
-    BuildContext context, Function func) async {
-  var result = await Connectivity().checkConnectivity();
-  if (result != ConnectivityResult.none) {
-    func.call();
-  } else {
-    showTextSnackBar(context, 'Вы не подключены к сети', 700);
-  }
-  return result != ConnectivityResult.none;
 }
 
 showTextSnackBar(BuildContext context, String text, int milliseconds) {

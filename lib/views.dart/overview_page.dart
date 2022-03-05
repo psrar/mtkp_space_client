@@ -1,10 +1,13 @@
 import 'dart:developer';
+import 'dart:io';
 
+import 'package:animations/animations.dart';
 import 'package:auto_size_text/auto_size_text.dart';
-import 'package:mtkp/caching.dart' as caching;
+import 'package:mtkp/workers/caching.dart' as caching;
 import 'package:mtkp/database/database_interface.dart';
-import 'package:mtkp/domens_view.dart';
+import 'package:mtkp/views.dart/domens_view.dart';
 import 'package:mtkp/models.dart';
+import 'package:mtkp/utils/internet_connection_checker.dart';
 import 'package:mtkp/widgets/layout.dart' as layout;
 import 'package:mtkp/widgets/shedule.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -12,7 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:jiffy/jiffy.dart';
 import 'package:tuple/tuple.dart';
 import 'package:url_launcher/url_launcher.dart' as url_launcher;
-import 'main.dart' as appGlobal;
+import '../main.dart' as appGlobal;
 
 part 'overview_page_widgets.dart';
 
@@ -49,7 +52,7 @@ class OverviewPage extends StatefulWidget {
 }
 
 class _OverviewPageState extends State<OverviewPage> {
-  Key datePreviewKey = GlobalKey();
+  Key? datePreviewKey;
 
   late bool _isReplacementSelected = false;
   late int _selectedIndex;
@@ -72,6 +75,7 @@ class _OverviewPageState extends State<OverviewPage> {
 
   int _selectedView = 0;
   final _views = <Widget>[Container(), Container()];
+  bool appbarAnimationDirection = false;
 
   Map<String, String> lessons = {};
 
@@ -120,11 +124,11 @@ class _OverviewPageState extends State<OverviewPage> {
 
     late final Widget sheduleContentWidget;
     if (_isReplacementSelected && dayShedule == null) {
-      sheduleContentWidget = buildEmptyReplacements(
-          context,
-          _replacementsLoadingState,
-          _selectedReplacement,
-          () => layout.checkInternetConnection(context, () {
+      sheduleContentWidget = EmptyReplacements(
+          context: context,
+          loadingState: _replacementsLoadingState,
+          selectedReplacement: _selectedReplacement,
+          retryAction: () => checkInternetConnection(context, () {
                 _replacementsLoadingState = 0;
                 setState(() => _replacementsLoadingState = 0);
                 _requestReplacements(_selectedGroup, 2);
@@ -147,7 +151,7 @@ class _OverviewPageState extends State<OverviewPage> {
     final _updateAction = IconButton(
         splashRadius: 18,
         onPressed: () async {
-          layout.checkInternetConnection(context, () {
+          checkInternetConnection(context, () {
             setState(() {
               weekShedule = null;
               _replacements = Replacements(null);
@@ -173,7 +177,7 @@ class _OverviewPageState extends State<OverviewPage> {
             selectedGroup: _selectedGroup,
             options: entryOptions,
             callback: (value) {
-              layout.checkInternetConnection(context, () async {
+              checkInternetConnection(context, () async {
                 setState(() {
                   weekShedule = null;
                   _replacements = Replacements(null);
@@ -191,7 +195,8 @@ class _OverviewPageState extends State<OverviewPage> {
     );
 // const EdgeInsets.symmetric(horizontal: 18, vertical: 8)
     _views[0] = _selectedGroup == 'Группа'
-        ? buildEmptyWelcome(entryOptions.isEmpty && _selectedGroup == 'Группа')
+        ? EmptyWelcome(
+            loading: entryOptions.isEmpty && _selectedGroup == 'Группа')
         : Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Column(
@@ -199,8 +204,13 @@ class _OverviewPageState extends State<OverviewPage> {
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 18),
-                    child: buildDatePreview(_selectedDay, _selectedMonth,
-                        _isReplacementSelected, _selectedWeek, datePreviewKey),
+                    child: DatePreview(
+                        key: ValueKey(_selectedView),
+                        selectedDay: _selectedDay,
+                        selectedMonth: _selectedMonth,
+                        replacementSelected: _isReplacementSelected,
+                        selectedWeek: _selectedWeek,
+                        datePreviewKey: datePreviewKey),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -214,12 +224,12 @@ class _OverviewPageState extends State<OverviewPage> {
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 18),
-                    child: buildReplacementSelection(
-                        appGlobal.primaryColor,
-                        appGlobal.focusColor,
-                        _replacementsLoadingState,
-                        _isReplacementSelected,
-                        () => setState(() {
+                    child: ReplacementSelection(
+                        sheduleColor: appGlobal.primaryColor,
+                        replacementColor: appGlobal.focusColor,
+                        replacementState: _replacementsLoadingState,
+                        isReplacementSelected: _isReplacementSelected,
+                        callback: () => setState(() {
                               _isReplacementSelected = !_isReplacementSelected;
                             })),
                   ),
@@ -230,7 +240,7 @@ class _OverviewPageState extends State<OverviewPage> {
                     startIndex: _selectedIndex,
                     startWeek: _selectedWeek,
                     callback: (index, day, month, week) => setState(() {
-                      if (day != _selectedDay) datePreviewKey = GlobalKey();
+                      if (day != _selectedDay) datePreviewKey = ValueKey(day);
                       _selectedIndex = index;
                       _selectedDay = day;
                       _selectedMonth = month;
@@ -254,46 +264,53 @@ class _OverviewPageState extends State<OverviewPage> {
     return Scaffold(
         appBar: AppBar(
           title: layout.SharedAxisSwitcher(
-            reverse: !_isReplacementSelected,
-            child: Row(
-              key: ValueKey(_isReplacementSelected),
-              children: [
-                Expanded(
-                  child: _isReplacementSelected
-                      ? Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            const Text('Замены',
-                                textAlign: TextAlign.left,
-                                style: TextStyle(
-                                    fontWeight: FontWeight.w900, fontSize: 24)),
-                            Text(
-                              _lastReplacements == null
-                                  ? 'Данные о заменах устарели'
-                                  : 'Обновлено ' +
-                                      SimpleDate.fromDateTime(
-                                              _lastReplacements!)
-                                          .toSpeech() +
-                                      ' в ${_lastReplacements!.hour.toString().padLeft(2, '0')}:${_lastReplacements!.minute.toString().padLeft(2, '0')}',
-                              style: const TextStyle(fontSize: 10),
-                            ),
-                          ],
-                        )
-                      : const Text('Расписание',
-                          textAlign: TextAlign.left,
-                          style: TextStyle(
-                              fontWeight: FontWeight.w900, fontSize: 24)),
-                ),
-              ],
-            ),
-          ),
+              reverse: appbarAnimationDirection,
+              transitionType: SharedAxisTransitionType.horizontal,
+              child: _selectedView == 0
+                  ? layout.SharedAxisSwitcher(
+                      key: ValueKey(appbarAnimationDirection),
+                      reverse: !_isReplacementSelected,
+                      child: Row(
+                        key: ValueKey(_isReplacementSelected),
+                        children: [
+                          Expanded(
+                            child: _isReplacementSelected
+                                ? Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      const Text('Замены'),
+                                      Text(
+                                        _lastReplacements == null
+                                            ? 'Данные о заменах устарели'
+                                            : 'Обновлено ' +
+                                                SimpleDate.fromDateTime(
+                                                        _lastReplacements!)
+                                                    .toSpeech() +
+                                                ' в ${_lastReplacements!.hour.toString().padLeft(2, '0')}:${_lastReplacements!.minute.toString().padLeft(2, '0')}',
+                                        style: const TextStyle(fontSize: 10),
+                                      ),
+                                    ],
+                                  )
+                                : const Text('Расписание'),
+                          ),
+                        ],
+                      ),
+                    )
+                  : Row(
+                      children: [
+                        Text('Предметы'),
+                      ],
+                    )),
           actions: [_updateAction, _groupSelectorAction],
         ),
         bottomNavigationBar: NavigationBar(
             animationDuration: const Duration(milliseconds: 400),
             selectedIndex: _selectedView,
-            onDestinationSelected: (index) =>
-                setState(() => _selectedView = index),
+            onDestinationSelected: (index) => setState(() {
+                  appbarAnimationDirection = index < _selectedView;
+                  _selectedView = index;
+                }),
             destinations: const [
               NavigationDestination(
                   icon: Icon(Icons.view_day_rounded, color: Colors.grey),
@@ -304,15 +321,24 @@ class _OverviewPageState extends State<OverviewPage> {
                   icon: Icon(Icons.school_rounded, color: Colors.grey),
                   selectedIcon: Icon(Icons.school_rounded, color: Colors.white),
                   label: 'Преподаватели и предметы'),
+              NavigationDestination(
+                  icon: Icon(Icons.settings_rounded, color: Colors.grey),
+                  selectedIcon:
+                      Icon(Icons.settings_rounded, color: Colors.white),
+                  label: 'Настройки'),
             ]),
-        body: _views[_selectedView]);
+        body: layout.SharedAxisSwitcher(
+          reverse: appbarAnimationDirection,
+          transitionType: SharedAxisTransitionType.horizontal,
+          child: _views[_selectedView],
+        ));
   }
 
   void initialization() async {
     if (!debug) {
       await tryLoadCache();
 
-      await layout.checkInternetConnection(context, () async {
+      await checkInternetConnection(context, () async {
         await _requestGroups();
         await _requestReplacements(_selectedGroup, 2);
       });
@@ -326,29 +352,30 @@ class _OverviewPageState extends State<OverviewPage> {
   }
 
   Future<void> tryLoadCache() async {
-    if (!kIsWeb) {
-      await caching.loadWeekSheduleCache().then((value) {
-        if (value != null) {
-          setState(() {
-            _selectedGroup = value.item1;
-            timetable = value.item2;
-            weekShedule = value.item3;
-          });
-        }
-      });
+    if (kIsWeb || !Platform.isAndroid) return;
 
-      await caching.loadReplacementsCache().then((value) {
+    await caching.loadWeekSheduleCache().then((value) {
+      if (value != null) {
         setState(() {
-          _replacements = value.item2;
-          _lastReplacements = value.item1;
-          _replacementsLoadingState = 1;
-          if (_replacements
-                  .getReplacement(SimpleDate(_selectedDay, _selectedMonth))
-                  ?.item2 !=
-              null) _isReplacementSelected = true;
+          _selectedGroup = value.item1;
+          timetable = value.item2;
+          weekShedule = value.item3;
         });
+      }
+    });
+
+    await caching.loadReplacementsCache().then((value) {
+      if (value == null) return;
+      setState(() {
+        _replacements = value.item2;
+        _lastReplacements = value.item1;
+        _replacementsLoadingState = 1;
+        if (_replacements
+                .getReplacement(SimpleDate(_selectedDay, _selectedMonth))
+                ?.item2 !=
+            null) _isReplacementSelected = true;
       });
-    }
+    });
   }
 
   Future<void> _requestGroups() async {
@@ -415,7 +442,7 @@ class _OverviewPageState extends State<OverviewPage> {
               buildDomensMap(weekShedule);
             });
 
-            if (weekShedule != null && !kIsWeb) {
+            if (weekShedule != null) {
               caching.saveWeekshedule(_selectedGroup, weekShedule!);
             }
           });
