@@ -5,7 +5,7 @@ import 'package:mtkp/main.dart' as appGlobal;
 import 'package:mtkp/widgets/layout.dart';
 import 'package:disable_battery_optimization/disable_battery_optimization.dart';
 import 'package:mtkp/workers/background_worker.dart' as bw;
-import 'package:mtkp/workers/settings_model.dart';
+import 'package:mtkp/settings_model.dart';
 
 class SettingsView extends StatefulWidget {
   const SettingsView({Key? key}) : super(key: key);
@@ -30,15 +30,15 @@ class _SettingsViewState extends State<SettingsView> {
     return Column(
       children: [
         SingleChildScrollView(
-          padding: EdgeInsets.symmetric(vertical: 8, horizontal: 18),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               ColoredTextButton(
                   onPressed: () async {
-                    if (kIsWeb)
+                    if (kIsWeb) {
                       Fluttertoast.showToast(msg: 'Доступно только на Android');
-                    else {
+                    } else {
                       await DisableBatteryOptimization
                           .showDisableBatteryOptimizationSettings();
                       var batteryOptimizationDisabled =
@@ -50,8 +50,9 @@ class _SettingsViewState extends State<SettingsView> {
                             .showDisableManufacturerBatteryOptimizationSettings(
                                 'Ваше устройство блокирует фоновую работу приложения',
                                 'Пожалуйста, разрешите работу приложения в фоне. Это необходимо только для фоновой проверки замен и получения важных уведомлений. Отключить функцию можно будет в любое время в настройках приложения.');
-                      } else
+                      } else {
                         Fluttertoast.showToast(msg: 'Все уже готово!');
+                      }
                     }
                   },
                   text:

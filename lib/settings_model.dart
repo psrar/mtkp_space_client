@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -19,4 +18,11 @@ Future<Map<String, dynamic>> loadSettings() async {
   if (settings == null) return settingsDefaults;
   if (settings.isEmpty) return settingsDefaults;
   return settings;
+}
+
+Future saveSubscriptionToGroup(String group) async {
+  if (kIsWeb || !Platform.isAndroid) {
+    return 'Подписки на рассылки сообщений работает только на Android';
+  }
+  await writeSimpleFile('subscription.txt', group);
 }

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:animations/animations.dart';
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:mtkp/settings_model.dart';
 import 'package:mtkp/views.dart/settings_view.dart';
 import 'package:mtkp/workers/caching.dart' as caching;
 import 'package:mtkp/database/database_interface.dart';
@@ -14,6 +15,7 @@ import 'package:mtkp/widgets/shedule.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:jiffy/jiffy.dart';
+import 'package:mtkp/workers/file_worker.dart';
 import 'package:tuple/tuple.dart';
 import 'package:url_launcher/url_launcher.dart' as url_launcher;
 import 'package:mtkp/main.dart' as appGlobal;
@@ -74,7 +76,7 @@ class _OverviewPageState extends State<OverviewPage> {
   DateTime? _lastReplacements;
   int _replacementsLoadingState = 0;
 
-  int _selectedView = 2;
+  int _selectedView = 0;
   List<Widget> _views = List<Widget>.filled(3, Container());
   bool appbarAnimationDirection = false;
 
@@ -130,7 +132,7 @@ class _OverviewPageState extends State<OverviewPage> {
     _views[2] = _selectedGroup == 'Группа'
         ? EmptyWelcome(
             loading: entryOptions.isEmpty && _selectedGroup == 'Группа')
-        : SettingsView();
+        : const SettingsView();
 
     late final Widget sheduleContentWidget;
     if (_isReplacementSelected && dayShedule == null) {
@@ -194,6 +196,9 @@ class _OverviewPageState extends State<OverviewPage> {
               _requestShedule(_selectedGroup),
               _requestReplacements(_selectedGroup, 2)
             ]).whenComplete(() => setState(() {}));
+
+            await clearMessageStamp();
+            await saveSubscriptionToGroup(_selectedGroup);
           });
         },
       ),
@@ -298,10 +303,10 @@ class _OverviewPageState extends State<OverviewPage> {
         );
         break;
       case 1:
-        title = Row(children: [Text('Предметы')]);
+        title = Row(children: const [Text('Предметы')]);
         break;
       case 2:
-        title = Row(children: [Text('Настройки')]);
+        title = Row(children: const [Text('Настройки')]);
         break;
       default:
         title = Container(color: Colors.purpleAccent);

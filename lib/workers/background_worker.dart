@@ -1,15 +1,30 @@
+import 'dart:developer';
+
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
+import 'package:mtkp/database/database_interface.dart';
 import 'package:mtkp/utils/notification_utils.dart';
+import 'package:mtkp/workers/file_worker.dart';
 
 const int helloAlarmID = 0;
 
 void _backgroundFunc() async {
   try {
-    NotificationHandler().showNotification('title', 'body');
+    var lastStamp = await getLastMessageStamp();
+    var group = await readSimpleFile('subscription.txt');
+    var result =
+        await DatabaseWorker().getAllMessages(from: lastStamp, group: group);
+    if (result.item1.isNotEmpty) {
+      log(result.item1);
+    } else if (result.item2.isNotEmpty) {
+      await NotificationHandler().showNotification(
+          result.item2.first.item3.substring(2), result.item2.first.item4);
+      await saveLastMessageStamp(result.item2.first.item1, DateTime.now());
+    }
   } catch (e) {
+    log(e.toString());
   } finally {
     await AndroidAlarmManager.oneShot(
-        const Duration(seconds: 90), helloAlarmID, _backgroundFunc,
+        const Duration(seconds: 60), helloAlarmID, _backgroundFunc,
         exact: true, alarmClock: true, allowWhileIdle: true, wakeup: true);
   }
 }
@@ -20,7 +35,7 @@ Future<bool> initAlarmManager() async {
 
 void startShedule() async {
   await AndroidAlarmManager.oneShot(
-      const Duration(seconds: 10), helloAlarmID, _backgroundFunc,
+      const Duration(seconds: 60), helloAlarmID, _backgroundFunc,
       exact: true, alarmClock: true, allowWhileIdle: true, wakeup: true);
 }
 
