@@ -40,3 +40,15 @@ Future<Map<String, dynamic>?> getJsonFromFile(String fileName) async {
 
   return jsonDecode(await file.readAsString()) as Map<String, dynamic>;
 }
+
+Future writeSimpleFile(String fileName, String content) async {
+  final file = await getDocumentsFilePath(fileName);
+  await file.writeAsString(content);
+}
+
+Future<String> readSimpleFile(String fileName) async {
+  final file = await getDocumentsFilePath(fileName);
+  if (!await file.exists()) return '';
+
+  return await file.readAsString();
+}

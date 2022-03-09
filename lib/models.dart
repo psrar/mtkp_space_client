@@ -304,7 +304,7 @@ class Time {
   Map<String, dynamic> toJson() => _$TimeToJson(this);
 }
 
-//Модель упрощенной даты (день и месяц)
+///Модель упрощенной даты (день и месяц)
 class SimpleDate {
   late final int day;
   late final Month month;

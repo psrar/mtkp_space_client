@@ -115,6 +115,48 @@ class DatabaseWorker {
     }
   }
 
+  Future<Tuple2<String, List<Tuple4<int, String, String, String>>>>
+      getAllMessages({Tuple2<int, DateTime>? from, String? group}) async {
+    PostgrestResponse<dynamic> result;
+    if (from == null) {
+      if (group == null) {
+        result = await _client.from('t_message').select().execute();
+      } else {
+        result = await _client
+            .from('t_message')
+            .select()
+            .like('receiver', group)
+            .execute();
+      }
+    } else {
+      if (group == null) {
+        result = await _client
+            .from('t_message')
+            .select()
+            .gt('id', from.item1)
+            .limit(8)
+            .execute();
+      } else {
+        result = await _client
+            .from('t_message')
+            .select()
+            .like('receiver', group)
+            .gt('id', from.item1)
+            .limit(8)
+            .execute();
+      }
+    }
+    if (result.hasError) return Tuple2(result.error.toString(), []);
+
+    var messages = <Tuple4<int, String, String, String>>[];
+    for (var element in (result.data as List<dynamic>)) {
+      messages.add(Tuple4(element['id'], element['receiver'], element['title'],
+          element['body']));
+    }
+
+    return Tuple2('', messages);
+  }
+
   Future<Tuple2<String?, Map<SimpleDate, List<PairModel?>?>?>> getReplacements(
       SimpleDate date, String group) async {
     try {
