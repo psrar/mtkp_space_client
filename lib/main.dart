@@ -12,6 +12,7 @@ import 'package:mtkp/workers/background_worker.dart';
 
 const Color primaryColor = Color.fromARGB(255, 0, 124, 249);
 const Color focusColor = Color.fromARGB(255, 255, 90, 131);
+
 const Color errorColor = Colors.red;
 
 void main() {
@@ -56,7 +57,7 @@ class MyApp extends StatelessWidget {
               headline6: GoogleFonts.rubik(
                   color: Colors.white,
                   fontWeight: FontWeight.w800,
-                  fontSize: 26),
+                  fontSize: 20),
               headline5: _font,
               bodyText2: _font,
               button: _font.copyWith(color: Colors.white, fontSize: 16))),

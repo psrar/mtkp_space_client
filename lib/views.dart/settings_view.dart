@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mtkp/main.dart' as appGlobal;
 import 'package:mtkp/widgets/layout.dart';
-import 'package:disable_battery_optimization/disable_battery_optimization.dart';
 import 'package:mtkp/workers/background_worker.dart' as bw;
 import 'package:mtkp/settings_model.dart';
+import 'package:optimize_battery/optimize_battery.dart';
+import 'package:url_launcher/url_launcher.dart' as url_launcher;
 
 class SettingsView extends StatefulWidget {
   const SettingsView({Key? key}) : super(key: key);
@@ -21,8 +22,11 @@ class _SettingsViewState extends State<SettingsView> {
   void initState() {
     super.initState();
 
-    loadSettings().then((value) =>
-        setState(() => _isBackgroundWorkEnabled = value['background_enabled']));
+    if (!kIsWeb) {
+      loadSettings().then((value) => setState(
+          () => _isBackgroundWorkEnabled = value['background_enabled']));
+      if (_isBackgroundWorkEnabled) bw.startShedule();
+    }
   }
 
   @override
@@ -36,23 +40,69 @@ class _SettingsViewState extends State<SettingsView> {
             children: [
               ColoredTextButton(
                   onPressed: () async {
-                    if (kIsWeb) {
-                      Fluttertoast.showToast(msg: 'Доступно только на Android');
-                    } else {
-                      await DisableBatteryOptimization
-                          .showDisableBatteryOptimizationSettings();
-                      var batteryOptimizationDisabled =
-                          await DisableBatteryOptimization
-                              .isAllBatteryOptimizationDisabled;
-                      if (batteryOptimizationDisabled != null &&
-                          batteryOptimizationDisabled == false) {
-                        await DisableBatteryOptimization
-                            .showDisableManufacturerBatteryOptimizationSettings(
-                                'Ваше устройство блокирует фоновую работу приложения',
-                                'Пожалуйста, разрешите работу приложения в фоне. Это необходимо только для фоновой проверки замен и получения важных уведомлений. Отключить функцию можно будет в любое время в настройках приложения.');
+                    try {
+                      if (kIsWeb) {
+                        Fluttertoast.showToast(
+                            msg: 'Доступно только на Android');
                       } else {
-                        Fluttertoast.showToast(msg: 'Все уже готово!');
+                        await OptimizeBattery.stopOptimizingBatteryUsage();
                       }
+                    } catch (e) {
+                    } finally {
+                      showDialog(
+                        context: context,
+                        builder: (context) => SimpleDialog(
+                          title: const Text('Про работу в фоновом режиме'),
+                          titlePadding: const EdgeInsets.all(20),
+                          backgroundColor:
+                              const Color.fromARGB(255, 69, 69, 69),
+                          contentPadding: const EdgeInsets.all(18),
+                          children: [
+                            SingleChildScrollView(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  const Text(
+                                      '    Данное приложение может работать в фоновом режиме (даже когда вы закрыли его), чтобы отправлять вам уведомления о заменах и другие важные сообщения.\n    Хотя вы, вероятно, только что разрешили приложению работу в фоне и отключили оптимизацию батаре для него, многие производители оболочек на основе Android используют собственные решения для ограничения фоновой работы. Среди них: Xiaomi, Huawei, Honor и многие другие. Для того, чтобы пользователям данных устройств приходили уведомления, необходимо провести дополнительную настройку. Это распространённая практика, и существует много руководств, объясняющих, как это сделать. Они приведены в конце заметки.',
+                                      style: TextStyle(fontSize: 14)),
+                                  const Text('Почему так произошло?',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16)),
+                                  const Text(
+                                      '    Я очень извиняюсь за ту мороку, которую вызывает принятое мной решение. Поскольку у МТКП Space нет серверов для обработки данных, небольшая часть работы выполняется на вашем устройстве. Над оптимизацией этой работы проводится кропотливая работа, так что вы не должны столкнуться с каким-либо ощутимым потреблением ресурсов батареи и трафика. Если же такое произошло, вы всегда можете отключить функцию и связаться со мной для скорейшего исправления ошибки.',
+                                      style: TextStyle(fontSize: 14)),
+                                  const SizedBox(height: 18),
+                                  InkWell(
+                                      onTap: () async => await url_launcher.launch(
+                                          'https://intercom.help/Wheely-help/ru/articles/4294782-%D0%BA%D0%B0%D0%BA-%D0%BE%D1%82%D0%BA%D0%BB%D1%8E%D1%87%D0%B8%D1%82%D1%8C-%D0%BE%D0%BF%D1%82%D0%B8%D0%BC%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8E-%D1%80%D0%B0%D1%81%D1%85%D0%BE%D0%B4%D0%B0-%D0%B1%D0%B0%D1%82%D0%B0%D1%80%D0%B5%D0%B8-%D0%BD%D0%B0-android-%D1%83%D1%81%D1%82%D1%80%D0%BE%D0%B9%D1%81%D1%82%D0%B2%D0%B0%D1%85'),
+                                      child: const Text(
+                                          'Руководство по отключению оптимизации батареи на русском языке (Xiaomi, Huawei, Samsung, Asus)',
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.lightBlue))),
+                                  const SizedBox(height: 8),
+                                  InkWell(
+                                      onTap: () async => await url_launcher
+                                          .launch('https://dontkillmyapp.com/'),
+                                      child: const Text(
+                                          'Dontkillmyapp: Руководство на английском языке и специализированный на данной проблеме сайт для всех производителей устройств',
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.lightBlue))),
+                                  const SizedBox(height: 18),
+                                  ColoredTextButton(
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(),
+                                      text: 'Я все прочитал(а)',
+                                      foregroundColor: Colors.white,
+                                      boxColor: Colors.blue)
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
                     }
                   },
                   text:
@@ -72,15 +122,20 @@ class _SettingsViewState extends State<SettingsView> {
                   borderRadius: BorderRadius.circular(8),
                   child: ColoredTextButton(
                     onPressed: () async {
-                      if (_isBackgroundWorkEnabled) {
-                        bw.stopShedule();
-                        setState(() => _isBackgroundWorkEnabled = false);
+                      if (!kIsWeb) {
+                        if (_isBackgroundWorkEnabled) {
+                          bw.stopShedule();
+                          setState(() => _isBackgroundWorkEnabled = false);
+                        } else {
+                          bw.startShedule();
+                          setState(() => _isBackgroundWorkEnabled = true);
+                        }
+                        await saveSettings(
+                            {'background_enabled': _isBackgroundWorkEnabled});
                       } else {
-                        bw.startShedule();
-                        setState(() => _isBackgroundWorkEnabled = true);
+                        Fluttertoast.showToast(
+                            msg: 'Доступно только на Android');
                       }
-                      await saveSettings(
-                          {'background_enabled': _isBackgroundWorkEnabled});
                     },
                     text: _isBackgroundWorkEnabled
                         ? 'Фоновая проверка замен включена'

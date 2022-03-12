@@ -17,15 +17,15 @@ void _backgroundFunc() async {
       log(result.item1);
     } else if (result.item2.isNotEmpty) {
       await NotificationHandler().showNotification(
-          result.item2.first.item3.substring(2), result.item2.first.item4);
+          result.item2.first.item3.substring(1), result.item2.first.item4);
       await saveLastMessageStamp(result.item2.first.item1, DateTime.now());
     }
   } catch (e) {
     log(e.toString());
   } finally {
     await AndroidAlarmManager.oneShot(
-        const Duration(minutes: 1), helloAlarmID, _backgroundFunc,
-        exact: true, alarmClock: true, allowWhileIdle: true, wakeup: true);
+        const Duration(minutes: 2), helloAlarmID, _backgroundFunc,
+        exact: true, alarmClock: false, allowWhileIdle: true, wakeup: true);
   }
 }
 
@@ -35,8 +35,8 @@ Future<bool> initAlarmManager() async {
 
 void startShedule() async {
   await AndroidAlarmManager.oneShot(
-      const Duration(minutes: 1), helloAlarmID, _backgroundFunc,
-      exact: true, alarmClock: true, allowWhileIdle: true, wakeup: true);
+      const Duration(seconds: 10), helloAlarmID, _backgroundFunc,
+      exact: true, alarmClock: false, allowWhileIdle: true, wakeup: true);
 }
 
 void stopShedule() async {

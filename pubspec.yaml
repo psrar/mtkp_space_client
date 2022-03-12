@@ -44,8 +44,9 @@ dependencies:
   android_alarm_manager_plus: ^2.0.5
   fluttertoast: ^8.0.8
   http: ^0.13.4
-  disable_battery_optimization: ^1.1.0+1
   flutter_lints: ^1.0.4
+  pinch_zoom: ^1.0.0
+  optimize_battery: ^0.0.2
 
 dev_dependencies:
   build_runner: ^2.0.0
@@ -81,9 +82,8 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+  assets:
+    - assets/building_plan/building_plan.jpg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.

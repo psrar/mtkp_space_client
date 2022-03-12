@@ -3,6 +3,7 @@
     <!-- Flutter needs it to communicate with the running application
          to allow setting breakpoints, to provide hot reload, etc.
     -->
+    <uses-permission  android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
     <uses-permission android:name="android.permission.INTERNET"/>
     <!-- Added for alarm manager -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>

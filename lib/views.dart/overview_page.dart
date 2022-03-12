@@ -77,7 +77,7 @@ class _OverviewPageState extends State<OverviewPage> {
   int _replacementsLoadingState = 0;
 
   int _selectedView = 0;
-  List<Widget> _views = List<Widget>.filled(3, Container());
+  late List<Widget> _views;
   bool appbarAnimationDirection = false;
 
   Map<String, String> lessons = {};
@@ -99,7 +99,7 @@ class _OverviewPageState extends State<OverviewPage> {
 
     initialization();
 
-    _views = List<Widget>.filled(3, Container());
+    _views = List<Widget>.filled(3, Container(color: Colors.pinkAccent));
   }
 
   @override
@@ -197,8 +197,10 @@ class _OverviewPageState extends State<OverviewPage> {
               _requestReplacements(_selectedGroup, 2)
             ]).whenComplete(() => setState(() {}));
 
-            await clearMessageStamp();
-            await saveSubscriptionToGroup(_selectedGroup);
+            if (!kIsWeb) {
+              await clearMessageStamp();
+              await saveSubscriptionToGroup(_selectedGroup);
+            }
           });
         },
       ),
