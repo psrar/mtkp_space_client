@@ -25,7 +25,11 @@ void _backgroundFunc() async {
   } finally {
     await AndroidAlarmManager.oneShot(
         const Duration(minutes: 2), helloAlarmID, _backgroundFunc,
-        exact: true, alarmClock: false, allowWhileIdle: true, wakeup: true);
+        exact: true,
+        alarmClock: false,
+        allowWhileIdle: true,
+        wakeup: true,
+        rescheduleOnReboot: true);
   }
 }
 
@@ -36,7 +40,11 @@ Future<bool> initAlarmManager() async {
 void startShedule() async {
   await AndroidAlarmManager.oneShot(
       const Duration(seconds: 10), helloAlarmID, _backgroundFunc,
-      exact: true, alarmClock: false, allowWhileIdle: true, wakeup: true);
+      exact: true,
+      alarmClock: false,
+      allowWhileIdle: true,
+      wakeup: true,
+      rescheduleOnReboot: true);
 }
 
 void stopShedule() async {

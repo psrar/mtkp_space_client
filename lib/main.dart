@@ -15,7 +15,7 @@ const Color focusColor = Color.fromARGB(255, 255, 90, 131);
 
 const Color errorColor = Colors.red;
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   DatabaseWorker();
