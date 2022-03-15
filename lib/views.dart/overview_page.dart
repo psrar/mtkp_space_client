@@ -1,5 +1,4 @@
 import 'dart:developer';
-import 'dart:io';
 
 import 'package:animations/animations.dart';
 import 'package:auto_size_text/auto_size_text.dart';
@@ -229,7 +228,7 @@ class _OverviewPageState extends State<OverviewPage> {
                 Expanded(
                     flex: 12,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 18.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
                       child: sheduleWidget,
                     )),
                 const SizedBox(height: 18),
@@ -370,7 +369,7 @@ class _OverviewPageState extends State<OverviewPage> {
   }
 
   Future<void> tryLoadCache() async {
-    if (kIsWeb || !Platform.isAndroid) return;
+    if (kIsWeb) return;
 
     await caching.loadWeekSheduleCache().then((value) {
       if (value != null) {

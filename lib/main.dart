@@ -1,8 +1,7 @@
 // import 'package:diary/background_worker.dart';
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:mtkp/database/database_interface.dart';
+import 'package:mtkp/settings_model.dart';
 import 'package:mtkp/views.dart/overview_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -15,6 +14,8 @@ const Color focusColor = Color.fromARGB(255, 255, 90, 131);
 
 const Color errorColor = Colors.red;
 
+Map<String, dynamic> settings = {};
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -22,9 +23,16 @@ void main() async {
 
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
-  if (!kIsWeb && Platform.isAndroid) {
+  if (!kIsWeb) {
     NotificationHandler().initializePlugin();
     initAlarmManager();
+  }
+
+  if (!kIsWeb) {
+    loadSettings().then((value) {
+      settings = value;
+      if (value['background_enabled']) startShedule();
+    });
   }
 
   runApp(const MyApp());

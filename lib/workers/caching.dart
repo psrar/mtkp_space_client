@@ -11,7 +11,7 @@ const sheduleCachePath = 'shedule.cache';
 const replacementsCachePath = 'replacements.cache';
 
 Future saveWeekshedule(String group, WeekShedule weekShedule) async {
-  if (kIsWeb || !Platform.isAndroid) return false;
+  if (kIsWeb) return false;
 
   final file = await getCacheFilePath(sheduleCachePath);
   var saveModel = SaveModel(weekShedule.weekLessons.item1,
@@ -22,7 +22,7 @@ Future saveWeekshedule(String group, WeekShedule weekShedule) async {
 
 Future saveReplacements(
     Replacements replacements, DateTime? lastReplacements) async {
-  if (kIsWeb || !Platform.isAndroid) return false;
+  if (kIsWeb) return false;
 
   final file = await getCacheFilePath(replacementsCachePath);
   String fileContents = (lastReplacements?.toString() ?? '...') +
@@ -32,7 +32,7 @@ Future saveReplacements(
 }
 
 Future<Tuple3<String, Timetable, WeekShedule?>?> loadWeekSheduleCache() async {
-  if (kIsWeb || !Platform.isAndroid) return null;
+  if (kIsWeb) return null;
 
   final file = await getCacheFilePath(sheduleCachePath);
   if (file.existsSync()) {
@@ -46,7 +46,7 @@ Future<Tuple3<String, Timetable, WeekShedule?>?> loadWeekSheduleCache() async {
 }
 
 Future<Tuple2<DateTime?, Replacements>?> loadReplacementsCache() async {
-  if (kIsWeb || !Platform.isAndroid) return null;
+  if (kIsWeb) return null;
 
   try {
     final file = await getCacheFilePath(replacementsCachePath);

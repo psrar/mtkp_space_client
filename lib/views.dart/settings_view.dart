@@ -16,18 +16,7 @@ class SettingsView extends StatefulWidget {
 }
 
 class _SettingsViewState extends State<SettingsView> {
-  bool _isBackgroundWorkEnabled = false;
-
-  @override
-  void initState() {
-    super.initState();
-
-    if (!kIsWeb) {
-      loadSettings().then((value) => setState(
-          () => _isBackgroundWorkEnabled = value['background_enabled']));
-      if (_isBackgroundWorkEnabled) bw.startShedule();
-    }
-  }
+  bool _isBackgroundWorkEnabled = appGlobal.settings['background_enabled'];
 
   @override
   Widget build(BuildContext context) {
