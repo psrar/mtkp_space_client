@@ -146,6 +146,7 @@ class Month {
     }
   }
 
+  ///From 1 to 12
   int get num {
     switch (this) {
       case Month.january:
@@ -267,6 +268,17 @@ class Replacements {
     }
   }
 
+  void cutDays(int storedAmount) {
+    if (replacements != null && replacements!.length < storedAmount) return;
+
+    var rp = replacements!.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+
+    replacements!
+      ..clear()
+      ..addEntries(rp.sublist(rp.length - storedAmount));
+  }
+
   int get count => replacements?.length ?? 0;
 
   Map<String, dynamic> toJson() {
@@ -305,7 +317,7 @@ class Time {
 }
 
 ///Модель упрощенной даты (день и месяц)
-class SimpleDate {
+class SimpleDate implements Comparable<SimpleDate> {
   late final int day;
   late final Month month;
 
@@ -338,6 +350,15 @@ class SimpleDate {
   String toSpeech() => '$day ${month.ofName}';
 
   String toNum() => '$day.${month.num}';
+
+  @override
+  int compareTo(SimpleDate other) {
+    if (day == other.day && month == other.month) return 0;
+    if ((other.month.num * 32 + other.day) - (month.num * 32 + day) < 0)
+      return 1;
+
+    return -1;
+  }
 }
 
 ///Расписание начала и конца пар

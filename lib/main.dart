@@ -1,6 +1,7 @@
 // import 'package:diary/background_worker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mtkp/database/database_interface.dart';
+import 'package:mtkp/models.dart';
 import 'package:mtkp/settings_model.dart';
 import 'package:mtkp/views.dart/overview_page.dart';
 import 'package:flutter/material.dart';

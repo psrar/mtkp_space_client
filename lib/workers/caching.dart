@@ -24,6 +24,10 @@ Future saveReplacements(
     Replacements replacements, DateTime? lastReplacements) async {
   if (kIsWeb) return false;
 
+  if (replacements.count > 7) {
+    replacements.cutDays(7);
+  }
+
   final file = await getCacheFilePath(replacementsCachePath);
   String fileContents = (lastReplacements?.toString() ?? '...') +
       '!' +

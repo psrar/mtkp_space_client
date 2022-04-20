@@ -1,5 +1,3 @@
-// ignore_for_file: file_names
-
 import 'package:animations/animations.dart';
 import 'package:mtkp/models.dart';
 import 'package:flutter/gestures.dart';
