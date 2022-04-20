@@ -1,21 +1,14 @@
 // import 'package:diary/background_worker.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:mtkp/database/database_interface.dart';
 import 'package:mtkp/models.dart';
 import 'package:mtkp/settings_model.dart';
-import 'package:mtkp/views.dart/overview_page.dart';
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter/services.dart';
 import 'package:mtkp/utils/notification_utils.dart';
+import 'package:mtkp/views.dart/overview_page.dart';
 import 'package:mtkp/workers/background_worker.dart';
-
-const Color primaryColor = Color.fromARGB(255, 0, 124, 249);
-const Color focusColor = Color.fromARGB(255, 255, 90, 131);
-
-const Color errorColor = Colors.red;
-
-Map<String, dynamic> settings = {};
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,6 +32,14 @@ void main() async {
   runApp(const MyApp());
 }
 
+const Color errorColor = Colors.red;
+
+const Color focusColor = Color.fromARGB(255, 255, 90, 131);
+
+const Color primaryColor = Color.fromARGB(255, 0, 124, 249);
+
+Map<String, dynamic> settings = {};
+
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
 
@@ -57,11 +58,13 @@ class MyApp extends StatelessWidget {
           primaryColorLight: primaryColor,
           focusColor: focusColor,
           scaffoldBackgroundColor: const Color.fromARGB(255, 52, 52, 52),
-          navigationBarTheme: const NavigationBarThemeData(
+          bottomNavigationBarTheme: const BottomNavigationBarThemeData(
               backgroundColor: Color.fromARGB(255, 69, 69, 69),
-              indicatorColor: primaryColor,
-              height: 50,
-              labelBehavior: NavigationDestinationLabelBehavior.alwaysHide),
+              selectedItemColor: primaryColor,
+              showUnselectedLabels: false,
+              showSelectedLabels: false,
+              selectedIconTheme: IconThemeData(color: primaryColor, size: 30),
+              unselectedIconTheme: IconThemeData(color: Colors.grey)),
           textTheme: TextTheme(
               headline6: GoogleFonts.rubik(
                   color: Colors.white,

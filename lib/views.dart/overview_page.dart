@@ -321,28 +321,20 @@ class _OverviewPageState extends State<OverviewPage> {
               child: Container(key: ValueKey(_selectedView), child: title)),
           actions: [_updateAction, _groupSelectorAction],
         ),
-        bottomNavigationBar: NavigationBar(
-            animationDuration: const Duration(milliseconds: 400),
-            selectedIndex: _selectedView,
-            onDestinationSelected: (index) => setState(() {
+        bottomNavigationBar: BottomNavigationBar(
+            currentIndex: _selectedView,
+            onTap: (index) => setState(() {
                   appbarAnimationDirection = index < _selectedView;
                   _selectedView = index;
                 }),
-            destinations: const [
-              NavigationDestination(
-                  icon: Icon(Icons.view_day_rounded, color: Colors.grey),
-                  selectedIcon:
-                      Icon(Icons.view_day_rounded, color: Colors.white),
-                  label: 'Расписание'),
-              NavigationDestination(
-                  icon: Icon(Icons.school_rounded, color: Colors.grey),
-                  selectedIcon: Icon(Icons.school_rounded, color: Colors.white),
+            items: const [
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.view_day_rounded), label: 'Расписание'),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.school_rounded),
                   label: 'Преподаватели и предметы'),
-              NavigationDestination(
-                  icon: Icon(Icons.settings_rounded, color: Colors.grey),
-                  selectedIcon:
-                      Icon(Icons.settings_rounded, color: Colors.white),
-                  label: 'Настройки'),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.settings_rounded), label: 'Настройки'),
             ]),
         body: layout.SharedAxisSwitcher(
           reverse: appbarAnimationDirection,

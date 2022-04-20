@@ -16,7 +16,8 @@ class SettingsView extends StatefulWidget {
 }
 
 class _SettingsViewState extends State<SettingsView> {
-  bool _isBackgroundWorkEnabled = appGlobal.settings['background_enabled'];
+  bool _isBackgroundWorkEnabled =
+      appGlobal.settings['background_enabled'] ?? false;
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +37,6 @@ class _SettingsViewState extends State<SettingsView> {
                       } else {
                         await OptimizeBattery.stopOptimizingBatteryUsage();
                       }
-                    } catch (e) {
                     } finally {
                       showDialog(
                         context: context,
