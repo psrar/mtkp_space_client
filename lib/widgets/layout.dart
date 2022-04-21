@@ -1,4 +1,5 @@
 import 'package:animations/animations.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:mtkp/models.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -311,6 +312,120 @@ class ColoredTextButton extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8)),
                 primary: splashColor));
+  }
+}
+
+class DatePreview extends StatelessWidget {
+  final int selectedDay;
+  final Month selectedMonth;
+  final bool replacementSelected;
+  final int selectedWeek;
+  final Key? datePreviewKey;
+  const DatePreview(
+      {Key? key,
+      required this.selectedDay,
+      required this.selectedMonth,
+      required this.replacementSelected,
+      required this.selectedWeek,
+      required this.datePreviewKey})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: key,
+      decoration: BoxDecoration(
+          color: Colors.black12, borderRadius: BorderRadius.circular(8)),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Expanded(
+            child: SlideTransitionDraft(
+              child: AutoSizeText(
+                '$selectedDay ${selectedMonth.ofName}' +
+                    (replacementSelected ? ', Замены' : ''),
+                key: datePreviewKey,
+                textAlign: TextAlign.center,
+                minFontSize: 8,
+              ),
+            ),
+          ),
+          Container(
+            width: 1,
+            color: Colors.black12,
+          ),
+          Expanded(
+            child: SlideTransitionDraft(
+              child: AutoSizeText(
+                selectedWeek % 2 == 0 ? 'Нижняя неделя' : 'Верхняя неделя',
+                key: ValueKey(selectedWeek),
+                textAlign: TextAlign.center,
+                minFontSize: 8,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ReplacementSelection extends StatelessWidget {
+  final Color sheduleColor;
+  final Color replacementColor;
+  final int replacementState;
+  final bool isReplacementSelected;
+  final Function callback;
+  const ReplacementSelection(
+      {Key? key,
+      required this.sheduleColor,
+      required this.replacementColor,
+      required this.replacementState,
+      required this.isReplacementSelected,
+      required this.callback})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            constraints: const BoxConstraints.expand(),
+            decoration: BoxDecoration(
+              border: Border.all(
+                  color:
+                      isReplacementSelected ? replacementColor : sheduleColor),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: InkWell(
+                onTap: () => callback(),
+                borderRadius: BorderRadius.circular(6),
+                child: Stack(alignment: Alignment.center, children: [
+                  SlideTransitionDraft(
+                    child: AutoSizeText(
+                      isReplacementSelected
+                          ? 'Смотреть расписание'
+                          : 'Смотреть замены',
+                      key: ValueKey(isReplacementSelected),
+                      minFontSize: 8,
+                    ),
+                  ),
+                  if (replacementState == 0)
+                    Container(
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 8),
+                        child: const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 3, color: Colors.white)))
+                ])),
+          ),
+        ),
+      ],
+    );
   }
 }
 

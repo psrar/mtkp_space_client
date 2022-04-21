@@ -2,6 +2,10 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:mtkp/models.dart';
 import 'package:flutter/material.dart';
 import 'package:tuple/tuple.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:mtkp/main.dart' as appGlobal;
+
+import 'layout.dart' show ColoredTextButton;
 
 AutoSizeGroup _sizeGroup = AutoSizeGroup();
 
@@ -16,6 +20,30 @@ class SheduleContentWidget extends StatelessWidget {
     var lessonsWidgetList = <Widget>[];
     var timetable = dayShedule.item1;
     var lessons = dayShedule.item2;
+    if (lessons != null && lessons.every((element) => element == null)) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            const Icon(Icons.cake_rounded,
+                color: appGlobal.accessColor, size: 74),
+            Text(
+              'Выходной!',
+              style: appGlobal.headerFont,
+            ),
+            ColoredTextButton(
+              text: 'Проверить самостоятельно',
+              onPressed: () async => await launch('https://vk.com/mtkp_bmstu'),
+              foregroundColor: Colors.white,
+              boxColor: appGlobal.accessColor,
+              splashColor: appGlobal.accessColor,
+              outlined: true,
+            ),
+          ],
+        ),
+      );
+    }
+
     for (var i = 0; i < 6; i++) {
       var time = timetable.all[i + 1];
       if (lessons != null && i < lessons.length) {

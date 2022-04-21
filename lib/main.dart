@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mtkp/database/database_interface.dart';
-import 'package:mtkp/models.dart';
 import 'package:mtkp/settings_model.dart';
 import 'package:mtkp/utils/notification_utils.dart';
 import 'package:mtkp/views.dart/overview_page.dart';
@@ -33,10 +32,14 @@ void main() async {
 }
 
 const Color errorColor = Colors.red;
-
 const Color focusColor = Color.fromARGB(255, 255, 90, 131);
-
 const Color primaryColor = Color.fromARGB(255, 0, 124, 249);
+const Color accessColor = Color.fromARGB(255, 139, 255, 145);
+final primeFont = GoogleFonts.rubik(color: Colors.white);
+final headerFont = GoogleFonts.rubik(
+    color: Colors.white, fontWeight: FontWeight.w800, fontSize: 24);
+final giantFont = GoogleFonts.rubik(
+    color: Colors.white, fontWeight: FontWeight.w800, fontSize: 30);
 
 Map<String, dynamic> settings = {};
 
@@ -45,8 +48,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final _font = GoogleFonts.rubik(color: Colors.white);
-
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: const OverviewPage(),
@@ -63,16 +64,17 @@ class MyApp extends StatelessWidget {
               selectedItemColor: primaryColor,
               showUnselectedLabels: false,
               showSelectedLabels: false,
-              selectedIconTheme: IconThemeData(color: primaryColor, size: 30),
-              unselectedIconTheme: IconThemeData(color: Colors.grey)),
+              selectedIconTheme: IconThemeData(color: primaryColor, size: 32),
+              unselectedIconTheme: IconThemeData(color: Colors.grey),
+              type: BottomNavigationBarType.fixed),
           textTheme: TextTheme(
               headline6: GoogleFonts.rubik(
                   color: Colors.white,
                   fontWeight: FontWeight.w800,
-                  fontSize: 20),
-              headline5: _font,
-              bodyText2: _font,
-              button: _font.copyWith(color: Colors.white, fontSize: 16))),
+                  fontSize: 24),
+              headline5: primeFont,
+              bodyText2: primeFont,
+              button: primeFont.copyWith(color: Colors.white, fontSize: 16))),
     );
   }
 }

@@ -24,7 +24,9 @@ void _backgroundFunc() async {
     log(e.toString());
   } finally {
     await AndroidAlarmManager.oneShot(
-        const Duration(minutes: 2), helloAlarmID, _backgroundFunc,
+        Duration(minutes: DateTime.now().hour < 8 ? 60 : 2),
+        helloAlarmID,
+        _backgroundFunc,
         exact: true,
         alarmClock: false,
         allowWhileIdle: true,

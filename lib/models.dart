@@ -364,15 +364,24 @@ class SimpleDate implements Comparable<SimpleDate> {
 ///Расписание начала и конца пар
 @JsonSerializable(fieldRename: FieldRename.snake)
 class Timetable {
-  Time first;
-  Time second;
-  Time third;
-  Time fourth;
-  Time fifth;
-  Time sixth;
+  late Time first;
+  late Time second;
+  late Time third;
+  late Time fourth;
+  late Time fifth;
+  late Time sixth;
 
   Timetable(
       this.first, this.second, this.third, this.fourth, this.fifth, this.sixth);
+
+  Timetable.empty() {
+    first = Time('', '');
+    second = Time('', '');
+    third = Time('', '');
+    fourth = Time('', '');
+    fifth = Time('', '');
+    sixth = Time('', '');
+  }
 
   factory Timetable.fromJson(Map<String, dynamic> json) =>
       _$TimetableFromJson(json);
