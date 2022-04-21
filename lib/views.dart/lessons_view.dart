@@ -5,7 +5,6 @@ import 'package:jiffy/jiffy.dart';
 import 'package:mtkp/database/database_interface.dart';
 import 'package:mtkp/models.dart';
 import 'package:mtkp/utils/internet_connection_checker.dart';
-import 'package:mtkp/views.dart/overview_page.dart';
 import 'package:mtkp/widgets/layout.dart';
 import 'package:mtkp/widgets/shedule.dart';
 import 'package:tuple/tuple.dart';
@@ -36,7 +35,7 @@ final testWeekShedule = WeekShedule(Tuple3(testTimetable, [
 const debug = false;
 
 class LessonsView extends StatefulWidget {
-  bool dirty = false;
+  final bool dirty;
   String selectedGroup;
 
   final void Function(bool isReplacementSelected, DateTime? lastReplacements,
@@ -54,8 +53,8 @@ class LessonsView extends StatefulWidget {
 }
 
 class _LessonsViewState extends State<LessonsView> {
-  Key? datePreviewKey;
   PageStorageBucket? storage;
+  late bool _dirty;
 
   late bool _isReplacementSelected = false;
   late int _selectedIndex;
@@ -64,9 +63,9 @@ class _LessonsViewState extends State<LessonsView> {
   late int _selectedWeek;
   late DateTime now;
 
-  WeekShedule? weekShedule;
+  WeekShedule? _weekShedule;
   List<PairModel?>? dayShedule;
-  Timetable timetable = Timetable.empty();
+  Timetable _timetable = Timetable.empty();
 
   Replacements _replacements = Replacements(null);
   Tuple2<SimpleDate, List<PairModel?>?>? _selectedReplacement;
@@ -80,6 +79,7 @@ class _LessonsViewState extends State<LessonsView> {
     super.initState();
 
     storage = PageStorage.of(context)!;
+    _dirty = widget.dirty;
 
     now = DateTime.now();
     DateTime date;
@@ -101,7 +101,7 @@ class _LessonsViewState extends State<LessonsView> {
     refresh();
 
     Border border;
-    if (weekShedule == null) {
+    if (_weekShedule == null) {
       border = Border.all(color: appGlobal.errorColor, width: 2);
     } else {
       border = Border.all(
@@ -116,8 +116,8 @@ class _LessonsViewState extends State<LessonsView> {
         dayShedule = _selectedReplacement?.item2;
       } else {
         dayShedule = _selectedWeek % 2 == 1
-            ? weekShedule!.weekLessons.item2[_selectedIndex]
-            : weekShedule!.weekLessons.item3[_selectedIndex];
+            ? _weekShedule!.weekLessons.item2[_selectedIndex]
+            : _weekShedule!.weekLessons.item3[_selectedIndex];
       }
     }
 
@@ -134,7 +134,7 @@ class _LessonsViewState extends State<LessonsView> {
               }));
     } else {
       sheduleContentWidget =
-          SheduleContentWidget(dayShedule: Tuple2(timetable, dayShedule));
+          SheduleContentWidget(dayShedule: Tuple2(_timetable, dayShedule));
     }
 
     var sheduleWidget = AnimatedContainer(
@@ -143,7 +143,7 @@ class _LessonsViewState extends State<LessonsView> {
           border: border,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: weekShedule == null
+        child: _weekShedule == null
             ? const Center(child: CircularProgressIndicator())
             : sheduleContentWidget);
 
@@ -155,12 +155,12 @@ class _LessonsViewState extends State<LessonsView> {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18),
               child: DatePreview(
-                  // key: ValueKey(_selectedView),
                   selectedDay: _selectedDay,
                   selectedMonth: _selectedMonth,
                   replacementSelected: _isReplacementSelected,
                   selectedWeek: _selectedWeek,
-                  datePreviewKey: datePreviewKey),
+                  datePreviewKey: ValueKey(_isReplacementSelected.toString() +
+                      _selectedDay.toString())),
             ),
           ),
           const SizedBox(height: 8),
@@ -191,7 +191,6 @@ class _LessonsViewState extends State<LessonsView> {
               startIndex: _selectedIndex,
               startWeek: _selectedWeek,
               callback: (index, day, month, week) => setState(() {
-                if (day != _selectedDay) datePreviewKey = ValueKey(day);
                 _selectedIndex = index;
                 _selectedDay = day;
                 _selectedMonth = month;
@@ -226,29 +225,29 @@ class _LessonsViewState extends State<LessonsView> {
           if (mounted) saveStateToStorage();
         });
       } else {
-        weekShedule = testWeekShedule;
-        timetable = testTimetable;
+        _weekShedule = testWeekShedule;
+        _timetable = testTimetable;
         // widget.selectedGroup = 'Тест';
       }
 
-      buildDomensMap(weekShedule);
+      buildDomensMap(_weekShedule);
 
       callback();
     } else {
       setState(() {
-        weekShedule = state[1];
+        _weekShedule = state[1];
         _replacements = state[2];
-        timetable = state[3];
+        _timetable = state[3];
         _replacementsLoadingState = state[4];
       });
     }
   }
 
   Future refresh() async {
-    if (widget.dirty) {
-      widget.dirty = false;
+    if (_dirty) {
+      _dirty = false;
       setState(() {
-        weekShedule = null;
+        _weekShedule = null;
         _replacements = Replacements(null);
       });
 
@@ -267,8 +266,8 @@ class _LessonsViewState extends State<LessonsView> {
       if (value != null) {
         setState(() {
           widget.selectedGroup = value.item1;
-          timetable = value.item2;
-          weekShedule = value.item3;
+          _timetable = value.item2;
+          _weekShedule = value.item3;
         });
       }
     });
@@ -327,7 +326,7 @@ class _LessonsViewState extends State<LessonsView> {
               for (var i = 0; i < 6; i++) {
                 times.add(value[i].split('-'));
               }
-              timetable = Timetable(
+              _timetable = Timetable(
                   Time(times[0][0], times[0][1]),
                   Time(times[1][0], times[1][1]),
                   Time(times[2][0], times[2][1]),
@@ -338,14 +337,14 @@ class _LessonsViewState extends State<LessonsView> {
 
             if (mounted) {
               setState(() {
-                weekShedule = WeekShedule(Tuple3(timetable, up, down));
+                _weekShedule = WeekShedule(Tuple3(_timetable, up, down));
               });
             }
 
-            buildDomensMap(weekShedule);
+            buildDomensMap(_weekShedule);
 
-            if (weekShedule != null) {
-              caching.saveWeekshedule(widget.selectedGroup, weekShedule!);
+            if (_weekShedule != null) {
+              caching.saveWeekshedule(widget.selectedGroup, _weekShedule!);
             }
           });
         });
@@ -475,9 +474,9 @@ class _LessonsViewState extends State<LessonsView> {
         context,
         [
           widget.selectedGroup,
-          weekShedule,
+          _weekShedule,
           _replacements,
-          timetable,
+          _timetable,
           _replacementsLoadingState,
         ],
         identifier: widget.key);

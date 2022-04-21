@@ -333,7 +333,6 @@ class DatePreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      key: key,
       decoration: BoxDecoration(
           color: Colors.black12, borderRadius: BorderRadius.circular(8)),
       child: Row(
