@@ -37,6 +37,7 @@ const debug = false;
 class LessonsView extends StatefulWidget {
   final bool dirty;
   String selectedGroup;
+  bool inSearch;
 
   final void Function(bool isReplacementSelected, DateTime? lastReplacements,
       Map<String, String> domens) callback;
@@ -45,7 +46,8 @@ class LessonsView extends StatefulWidget {
       {Key? key,
       required this.selectedGroup,
       required this.callback,
-      required this.dirty})
+      required this.dirty,
+      required this.inSearch})
       : super(key: key);
 
   @override
@@ -79,7 +81,6 @@ class _LessonsViewState extends State<LessonsView> {
     super.initState();
 
     storage = PageStorage.of(context)!;
-    _dirty = widget.dirty;
 
     now = DateTime.now();
     DateTime date;
@@ -98,6 +99,7 @@ class _LessonsViewState extends State<LessonsView> {
 
   @override
   Widget build(BuildContext context) {
+    _dirty = widget.dirty;
     refresh();
 
     Border border;
@@ -204,7 +206,6 @@ class _LessonsViewState extends State<LessonsView> {
                 } else {
                   _isReplacementSelected = true;
                 }
-                callback();
               }),
             ),
           )
@@ -223,11 +224,11 @@ class _LessonsViewState extends State<LessonsView> {
           await _requestShedule(widget.selectedGroup);
           await _requestReplacements(widget.selectedGroup, 2);
           if (mounted) saveStateToStorage();
+          _dirty = false;
         });
       } else {
         _weekShedule = testWeekShedule;
         _timetable = testTimetable;
-        // widget.selectedGroup = 'Тест';
       }
 
       buildDomensMap(_weekShedule);
@@ -240,6 +241,15 @@ class _LessonsViewState extends State<LessonsView> {
         _timetable = state[3];
         _replacementsLoadingState = state[4];
       });
+    }
+
+    if (_replacements
+            .getReplacement(SimpleDate(_selectedDay, _selectedMonth))
+            ?.item2 ==
+        null) {
+      _isReplacementSelected = false;
+    } else {
+      _isReplacementSelected = true;
     }
   }
 
@@ -262,17 +272,21 @@ class _LessonsViewState extends State<LessonsView> {
   Future<void> tryLoadCache() async {
     if (kIsWeb) return;
 
-    await caching.loadWeekSheduleCache().then((value) {
+    await caching
+        .loadWeekSheduleCache(widget.inSearch ? widget.selectedGroup : '')
+        .then((value) {
       if (value != null) {
         setState(() {
-          widget.selectedGroup = value.item1;
+          // widget.selectedGroup = value.item1;
           _timetable = value.item2;
           _weekShedule = value.item3;
         });
       }
     });
 
-    await caching.loadReplacementsCache().then((value) {
+    await caching
+        .loadReplacementsCache(widget.inSearch ? widget.selectedGroup : '')
+        .then((value) {
       if (value == null) return;
       setState(() {
         _replacements = value.item2;
@@ -344,7 +358,8 @@ class _LessonsViewState extends State<LessonsView> {
             buildDomensMap(_weekShedule);
 
             if (_weekShedule != null) {
-              caching.saveWeekshedule(widget.selectedGroup, _weekShedule!);
+              caching.saveWeekshedule(
+                  widget.selectedGroup, _weekShedule!, widget.inSearch);
             }
           });
         });
@@ -407,7 +422,8 @@ class _LessonsViewState extends State<LessonsView> {
           }
         });
       }
-      caching.saveReplacements(_replacements, _lastReplacements);
+      caching.saveReplacements(_replacements, _lastReplacements,
+          widget.inSearch ? widget.selectedGroup : '');
     }
 
     callback();

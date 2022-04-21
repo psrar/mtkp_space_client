@@ -50,7 +50,7 @@ class _TeachersViewState extends State<TeachersView> {
               itemBuilder: (context, index) {
                 return Padding(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
+                      const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
                   child: Row(children: [
                     Expanded(
                       child: Text(

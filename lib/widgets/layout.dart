@@ -241,18 +241,20 @@ class SharedAxisSwitcher extends StatelessWidget {
   final bool reverse;
   final Widget child;
   final SharedAxisTransitionType transitionType;
+  final Duration duration;
   const SharedAxisSwitcher(
       {Key? key,
       required this.child,
       required this.reverse,
-      this.transitionType = SharedAxisTransitionType.vertical})
+      this.transitionType = SharedAxisTransitionType.vertical,
+      this.duration = const Duration(milliseconds: 400)})
       : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return PageTransitionSwitcher(
         reverse: reverse,
-        duration: const Duration(milliseconds: 400),
+        duration: duration,
         transitionBuilder: (
           Widget child,
           Animation<double> primaryAnimation,

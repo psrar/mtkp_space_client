@@ -7,38 +7,71 @@ import 'package:mtkp/models.dart';
 import 'package:path_provider/path_provider.dart' show getTemporaryDirectory;
 import 'package:tuple/tuple.dart';
 
+const pinnedGroupsCachePath = 'pinnedGroups.cache';
 const sheduleCachePath = 'shedule.cache';
 const replacementsCachePath = 'replacements.cache';
 
-Future saveWeekshedule(String group, WeekShedule weekShedule) async {
+Future savePinnedGroups(List<String> pinnedGroups) async {
+  final File file = await getCacheFilePath(pinnedGroupsCachePath);
+  return file.writeAsString(pinnedGroups.join('\n'));
+}
+
+Future<List<String>> loadPinnedGroups() async {
+  final File file = await getCacheFilePath(pinnedGroupsCachePath);
+  if (file.existsSync()) {
+    return await file.readAsLines();
+  } else {
+    return [];
+  }
+}
+
+Future saveWeekshedule(String group, WeekShedule weekShedule,
+    [bool inSearch = false]) async {
   if (kIsWeb) return false;
 
-  final file = await getCacheFilePath(sheduleCachePath);
+  final File file;
+  if (inSearch) {
+    file = await getCacheFilePath('shedule_' + group + '.cache');
+  } else {
+    file = await getCacheFilePath(sheduleCachePath);
+  }
   var saveModel = SaveModel(weekShedule.weekLessons.item1,
       weekShedule.weekLessons.item2, weekShedule.weekLessons.item3, group);
 
   return file.writeAsString(jsonEncode(saveModel));
 }
 
-Future saveReplacements(
-    Replacements replacements, DateTime? lastReplacements) async {
+Future saveReplacements(Replacements replacements, DateTime? lastReplacements,
+    [String groupInSearch = '']) async {
   if (kIsWeb) return false;
 
   if (replacements.count > 7) {
     replacements.cutDays(7);
   }
 
-  final file = await getCacheFilePath(replacementsCachePath);
+  final File file;
+  if (groupInSearch.isNotEmpty) {
+    file = await getCacheFilePath('replacements_' + groupInSearch + '.cache');
+  } else {
+    file = await getCacheFilePath(replacementsCachePath);
+  }
   String fileContents = (lastReplacements?.toString() ?? '...') +
       '!' +
       jsonEncode(replacements.toJson());
   file.writeAsString(fileContents);
 }
 
-Future<Tuple3<String, Timetable, WeekShedule?>?> loadWeekSheduleCache() async {
+Future<Tuple3<String, Timetable, WeekShedule?>?> loadWeekSheduleCache(
+    [String groupInSearch = '']) async {
   if (kIsWeb) return null;
 
-  final file = await getCacheFilePath(sheduleCachePath);
+  final File file;
+  if (groupInSearch.isNotEmpty) {
+    file = await getCacheFilePath('shedule_' + groupInSearch + '.cache');
+  } else {
+    file = await getCacheFilePath(sheduleCachePath);
+  }
+
   if (file.existsSync()) {
     final saveFileMap = jsonDecode(file.readAsStringSync());
     var save = SaveModel.fromJson(saveFileMap);
@@ -49,11 +82,18 @@ Future<Tuple3<String, Timetable, WeekShedule?>?> loadWeekSheduleCache() async {
   }
 }
 
-Future<Tuple2<DateTime?, Replacements>?> loadReplacementsCache() async {
+Future<Tuple2<DateTime?, Replacements>?> loadReplacementsCache(
+    [String groupInSearch = '']) async {
   if (kIsWeb) return null;
 
   try {
-    final file = await getCacheFilePath(replacementsCachePath);
+    final File file;
+    if (groupInSearch.isNotEmpty) {
+      file = await getCacheFilePath('replacements_' + groupInSearch + '.cache');
+    } else {
+      file = await getCacheFilePath(replacementsCachePath);
+    }
+
     if (file.existsSync()) {
       final repl = (await file.readAsString()).split('!');
       if (repl.isNotEmpty) {

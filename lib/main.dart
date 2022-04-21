@@ -7,6 +7,8 @@ import 'package:mtkp/database/database_interface.dart';
 import 'package:mtkp/settings_model.dart';
 import 'package:mtkp/utils/notification_utils.dart';
 import 'package:mtkp/views.dart/overview_page.dart';
+import 'package:mtkp/views.dart/search_view/groups_view.dart';
+import 'package:mtkp/views.dart/search_view/teachers_view.dart';
 import 'package:mtkp/workers/background_worker.dart';
 
 void main() async {

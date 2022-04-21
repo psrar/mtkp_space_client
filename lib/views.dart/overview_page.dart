@@ -1,5 +1,9 @@
+import 'dart:developer';
+
 import 'package:animations/animations.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mtkp/settings_model.dart';
+import 'package:mtkp/utils/internet_connection_checker.dart';
 import 'package:mtkp/views.dart/lessons_view.dart';
 import 'package:mtkp/views.dart/search_view/search_view.dart';
 import 'package:mtkp/views.dart/settings_view.dart';
@@ -9,6 +13,7 @@ import 'package:mtkp/models.dart';
 import 'package:mtkp/widgets/layout.dart' as layout;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:mtkp/workers/caching.dart';
 import 'package:mtkp/workers/file_worker.dart';
 import 'package:mtkp/main.dart' as appGlobal;
 
@@ -34,18 +39,32 @@ class _OverviewPageState extends State<OverviewPage> {
   DateTime? _lastReplacements;
   Map<String, String> _domens = {};
 
+  bool _inSearchShedule = false;
+  String _searchOption = '';
+
+  List<String> cachedPinnedGroups = [];
+
   @override
   void initState() {
     super.initState();
+    _tryLoadCache();
     _requestGroups();
 
     _views = List<Widget>.filled(4, Container(color: Colors.pinkAccent));
-    _views[0] = SearchView(key: const PageStorageKey("Search"));
   }
 
   @override
   Widget build(BuildContext context) {
     var lessonsKey = const PageStorageKey("Lessons");
+
+    _views[0] = SearchView(
+        key: const PageStorageKey("Search"),
+        pinnedGroups: cachedPinnedGroups,
+        option: _searchOption,
+        callback: (newSearchOption) => setState(() {
+              _searchOption = newSearchOption;
+              _inSearchShedule = _searchOption.isNotEmpty;
+            }));
 
     _views[2] = _selectedGroup == 'Группа'
         ? EmptyWelcome(
@@ -93,6 +112,7 @@ class _OverviewPageState extends State<OverviewPage> {
             key: lessonsKey,
             selectedGroup: _selectedGroup,
             dirty: needUpdateTrigger,
+            inSearch: false,
             callback: (bool isReplacementSelected, DateTime? lastReplacements,
                 Map<String, String> domens) {
               setState(() {
@@ -107,7 +127,13 @@ class _OverviewPageState extends State<OverviewPage> {
     late Widget title;
     switch (_selectedView) {
       case 0:
-        title = Row(children: const [Text('Поиск')]);
+        title = layout.SharedAxisSwitcher(
+          reverse: _searchOption.isEmpty,
+          duration: const Duration(seconds: 1),
+          child: Row(key: ValueKey(_searchOption), children: [
+            _searchOption.isEmpty ? const Text('Поиск') : Text(_searchOption)
+          ]),
+        );
         break;
       case 1:
         title = layout.SharedAxisSwitcher(
@@ -159,27 +185,52 @@ class _OverviewPageState extends State<OverviewPage> {
         bottomNavigationBar: BottomNavigationBar(
             currentIndex: _selectedView,
             onTap: (index) => setState(() {
+                  if (_inSearchShedule && index == 0 && _selectedView == 0) {
+                    _inSearchShedule = false;
+                    _searchOption = '';
+                  }
+
                   appbarAnimationDirection = index < _selectedView;
                   _selectedView = index;
                 }),
-            items: const [
+            items: [
               BottomNavigationBarItem(
-                  icon: Icon(Icons.search_rounded), label: 'Поиск'),
-              BottomNavigationBarItem(
+                  icon: layout.SharedAxisSwitcher(
+                    reverse: _inSearchShedule,
+                    duration: const Duration(seconds: 1),
+                    child: _inSearchShedule
+                        ? Icon(Icons.arrow_downward_rounded,
+                            color: appGlobal.focusColor,
+                            key: ValueKey(_inSearchShedule))
+                        : Icon(Icons.search_rounded,
+                            key: ValueKey(_inSearchShedule)),
+                  ),
+                  label: 'Поиск'),
+              const BottomNavigationBarItem(
                   icon: Icon(Icons.view_day_rounded), label: 'Расписание'),
-              BottomNavigationBarItem(
+              const BottomNavigationBarItem(
                   icon: Icon(Icons.school_rounded), label: 'Предметы'),
-              BottomNavigationBarItem(
+              const BottomNavigationBarItem(
                   icon: Icon(Icons.settings_rounded), label: 'Настройки'),
             ]),
         body: PageStorage(
           bucket: _bucket,
           child: layout.SharedAxisSwitcher(
             reverse: appbarAnimationDirection,
+            duration: const Duration(milliseconds: 500),
             transitionType: SharedAxisTransitionType.horizontal,
             child: _views[_selectedView],
           ),
         ));
+  }
+
+  Future<void> _tryLoadCache() async {
+    if (kIsWeb) return;
+
+    await checkInternetConnection(context, () async {
+      _selectedGroup = (await loadWeekSheduleCache())?.item1 ?? 'Группа';
+      cachedPinnedGroups = await loadPinnedGroups();
+    }).whenComplete(() => setState(() {}));
   }
 
   Future<void> _requestGroups() async {
