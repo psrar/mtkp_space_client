@@ -1,15 +1,12 @@
-import 'dart:developer';
-
 import 'package:animations/animations.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mtkp/settings_model.dart';
 import 'package:mtkp/utils/internet_connection_checker.dart';
-import 'package:mtkp/views.dart/lessons_view.dart';
-import 'package:mtkp/views.dart/search_view/search_view.dart';
-import 'package:mtkp/views.dart/settings_view.dart';
+import 'package:mtkp/views/search_view/search_view.dart';
+import 'package:mtkp/views/settings_view.dart';
 import 'package:mtkp/database/database_interface.dart';
-import 'package:mtkp/views.dart/domens_view.dart';
+import 'package:mtkp/views/domens_view.dart';
 import 'package:mtkp/models.dart';
+import 'package:mtkp/views/lessons_view.dart';
 import 'package:mtkp/widgets/layout.dart' as layout;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -47,6 +44,7 @@ class _OverviewPageState extends State<OverviewPage> {
   @override
   void initState() {
     super.initState();
+
     _tryLoadCache();
     _requestGroups();
 
@@ -77,7 +75,10 @@ class _OverviewPageState extends State<OverviewPage> {
 
     final _updateAction = IconButton(
         splashRadius: 18,
-        onPressed: () => {setState(() => needUpdateTrigger = true)},
+        onPressed: () async {
+          setState(() => needUpdateTrigger = true);
+          if (_selectedGroup == 'Группа') await _requestGroups();
+        },
         icon: Icon(
           Icons.refresh_rounded,
           color: Theme.of(context).primaryColorLight,
@@ -227,20 +228,27 @@ class _OverviewPageState extends State<OverviewPage> {
   Future<void> _tryLoadCache() async {
     if (kIsWeb) return;
 
-    await checkInternetConnection(context, () async {
-      _selectedGroup = (await loadWeekSheduleCache())?.item1 ?? 'Группа';
-      cachedPinnedGroups = await loadPinnedGroups();
-    }).whenComplete(() => setState(() {}));
+    var gr = (await loadWeekSheduleCache())?.item1 ?? 'Группа';
+    var pg = await loadPinnedGroups();
+
+    setState(() {
+      _selectedGroup = gr;
+      cachedPinnedGroups = pg;
+    });
   }
 
   Future<void> _requestGroups() async {
     try {
-      await DatabaseWorker.currentDatabaseWorker!
-          .getAllGroups()
-          .then((value) => setState(() => entryOptions = value));
+      await checkInternetConnection(() async {
+        await DatabaseWorker.currentDatabaseWorker!
+            .getAllGroups()
+            .then((value) => setState(() => entryOptions = value));
+      });
     } catch (e) {
       layout.showTextSnackBar(
-          context, 'Не удаётся загрузить данные о группах.', 2000);
+          context,
+          'Не удаётся загрузить данные о группах. Нажмите кнопку обновления.',
+          2000);
     }
   }
 }

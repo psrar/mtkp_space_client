@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mtkp/main.dart';
-import 'package:mtkp/views.dart/lessons_view.dart';
-import 'package:mtkp/views.dart/search_view/groups_view.dart';
-import 'package:mtkp/views.dart/search_view/teachers_view.dart';
+import 'package:mtkp/views/lessons_view.dart';
+import 'package:mtkp/views/search_view/groups_view.dart';
+import 'package:mtkp/views/search_view/teachers_view.dart';
 import 'package:mtkp/widgets/layout.dart';
 import 'package:mtkp/workers/caching.dart';
 

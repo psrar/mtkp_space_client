@@ -1,9 +1,7 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:flutter/material.dart' show BuildContext;
 import 'package:fluttertoast/fluttertoast.dart';
 
-Future<bool> checkInternetConnection(
-    BuildContext context, Function func) async {
+Future<bool> checkInternetConnection(Function func) async {
   var result = await Connectivity().checkConnectivity();
   if (result != ConnectivityResult.none) {
     func.call();

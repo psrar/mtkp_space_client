@@ -4,6 +4,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:jiffy/jiffy.dart';
 import 'package:mtkp/database/database_interface.dart';
 import 'package:mtkp/models.dart';
+import 'package:mtkp/utils/domens_utils.dart';
 import 'package:mtkp/utils/internet_connection_checker.dart';
 import 'package:mtkp/widgets/layout.dart';
 import 'package:mtkp/widgets/shedule.dart';
@@ -12,27 +13,27 @@ import 'package:mtkp/main.dart' as appGlobal;
 import 'package:mtkp/workers/caching.dart' as caching;
 import 'package:url_launcher/url_launcher.dart' as url_launcher;
 
-final testTimetable = Timetable(
-    Time('9:00', '10:30'),
-    Time('10:50', '12:10'),
-    Time('12:40', '14:00'),
-    Time('14:30', '16:00'),
-    Time('16:10', '17:40'),
-    Time('18:00', '19:30'));
-final testWeekShedule = WeekShedule(Tuple3(testTimetable, [
-  for (var i = 0; i < 6; i++)
-    [
-      for (var r = i; r < 6; r++)
-        PairModel('Предмет', 'Учитель', '11${i.toString()}')
-    ]
-], [
-  for (var i = 0; i < 6; i++)
-    [
-      for (var r = i; r < 6; r++)
-        PairModel('Эбабаба', 'Данаман', '22${i.toString()}')
-    ]
-]));
-const debug = false;
+// final testTimetable = Timetable(
+//     Time('9:00', '10:30'),
+//     Time('10:50', '12:10'),
+//     Time('12:40', '14:00'),
+//     Time('14:30', '16:00'),
+//     Time('16:10', '17:40'),
+// Time('18:00', '19:30'));
+// final testWeekShedule = WeekShedule(Tuple3(testTimetable, [
+//   for (var i = 0; i < 6; i++)
+//     [
+//       for (var r = i; r < 6; r++)
+//         PairModel('Предмет', 'Учитель', '11${i.toString()}')
+//     ]
+// ], [
+//   for (var i = 0; i < 6; i++)
+//     [
+//       for (var r = i; r < 6; r++)
+//         PairModel('Эбабаба', 'Данаман', '22${i.toString()}')
+//     ]
+// ]));
+// const debug = true;
 
 class LessonsView extends StatefulWidget {
   final bool dirty;
@@ -40,7 +41,7 @@ class LessonsView extends StatefulWidget {
   bool inSearch;
 
   final void Function(bool isReplacementSelected, DateTime? lastReplacements,
-      Map<String, String> domens) callback;
+      Map<String, String> _domens) callback;
 
   LessonsView(
       {Key? key,
@@ -74,7 +75,7 @@ class _LessonsViewState extends State<LessonsView> {
   DateTime? _lastReplacements;
   int _replacementsLoadingState = 0;
 
-  Map<String, String> domens = {};
+  Map<String, String> _domens = {};
 
   @override
   void initState() {
@@ -129,7 +130,7 @@ class _LessonsViewState extends State<LessonsView> {
           context: context,
           loadingState: _replacementsLoadingState,
           selectedReplacement: _selectedReplacement,
-          retryAction: () => checkInternetConnection(context, () {
+          retryAction: () => checkInternetConnection(() {
                 _replacementsLoadingState = 0;
                 setState(() => _replacementsLoadingState = 0);
                 _requestReplacements(widget.selectedGroup, 2);
@@ -217,22 +218,17 @@ class _LessonsViewState extends State<LessonsView> {
   void initialization() async {
     var state = storage?.readState(context, identifier: widget.key);
     if (state == null || state[0] != widget.selectedGroup) {
-      if (!debug) {
-        await tryLoadCache();
+      await tryLoadCache();
 
-        await checkInternetConnection(context, () async {
-          await _requestShedule(widget.selectedGroup);
-          await _requestReplacements(widget.selectedGroup, 2);
-          if (mounted) saveStateToStorage();
-          _dirty = false;
-        });
-      } else {
-        _weekShedule = testWeekShedule;
-        _timetable = testTimetable;
-      }
+      await checkInternetConnection(() async {
+        await _requestShedule(widget.selectedGroup);
+        await _requestReplacements(widget.selectedGroup, 2);
+        if (mounted) saveStateToStorage();
+        _dirty = false;
+      });
 
-      buildDomensMap(_weekShedule);
-
+      _domens = buildDomensMap(_weekShedule);
+      saveStateToStorage();
       callback();
     } else {
       setState(() {
@@ -240,6 +236,8 @@ class _LessonsViewState extends State<LessonsView> {
         _replacements = state[2];
         _timetable = state[3];
         _replacementsLoadingState = state[4];
+        _domens = state[5];
+        _isReplacementSelected = state[6];
       });
     }
 
@@ -261,7 +259,7 @@ class _LessonsViewState extends State<LessonsView> {
         _replacements = Replacements(null);
       });
 
-      await checkInternetConnection(context, () async {
+      await checkInternetConnection(() async {
         await _requestShedule(widget.selectedGroup);
         await _requestReplacements(widget.selectedGroup, 2);
         if (mounted) saveStateToStorage();
@@ -276,11 +274,9 @@ class _LessonsViewState extends State<LessonsView> {
         .loadWeekSheduleCache(widget.inSearch ? widget.selectedGroup : '')
         .then((value) {
       if (value != null) {
-        setState(() {
-          // widget.selectedGroup = value.item1;
-          _timetable = value.item2;
-          _weekShedule = value.item3;
-        });
+        // widget.selectedGroup = value.item1;
+        _timetable = value.item2;
+        _weekShedule = value.item3;
       }
     });
 
@@ -288,16 +284,16 @@ class _LessonsViewState extends State<LessonsView> {
         .loadReplacementsCache(widget.inSearch ? widget.selectedGroup : '')
         .then((value) {
       if (value == null) return;
-      setState(() {
-        _replacements = value.item2;
-        _lastReplacements = value.item1;
-        _replacementsLoadingState = 1;
-        if (_replacements
-                .getReplacement(SimpleDate(_selectedDay, _selectedMonth))
-                ?.item2 !=
-            null) _isReplacementSelected = true;
-      });
+      _replacements = value.item2;
+      _lastReplacements = value.item1;
+      _replacementsLoadingState = 1;
+      if (_replacements
+              .getReplacement(SimpleDate(_selectedDay, _selectedMonth))
+              ?.item2 !=
+          null) _isReplacementSelected = true;
     });
+
+    setState(() {});
   }
 
   Future<void> _requestShedule(String group) async {
@@ -355,7 +351,9 @@ class _LessonsViewState extends State<LessonsView> {
               });
             }
 
-            buildDomensMap(_weekShedule);
+            _domens = buildDomensMap(_weekShedule);
+            saveStateToStorage();
+            callback();
 
             if (_weekShedule != null) {
               caching.saveWeekshedule(
@@ -429,52 +427,17 @@ class _LessonsViewState extends State<LessonsView> {
     callback();
   }
 
-  void buildDomensMap(WeekShedule? inputShedule) {
-    if (inputShedule != null) {
-      var result = <String, String>{};
-      var pairs =
-          inputShedule.weekLessons.item2 + inputShedule.weekLessons.item3;
-      for (var element in pairs) {
-        for (var pair in element) {
-          if (pair != null) {
-            String? mdk =
-                RegExp(r'([А-Я]+.\d{1,2}.\d{1,2})').stringMatch(pair.name);
-            if (mdk != null) {
-              String match = result.keys.firstWhere(
-                  (element) => element.contains(mdk),
-                  orElse: (() => ''));
-              if (match.isNotEmpty) {
-                if (match.length < pair.name.length) {
-                  result.remove(match);
-                  result[pair.name] = pair.teacherReadable;
-                }
-              } else {
-                result[pair.name] = pair.teacherReadable;
-              }
-            } else {
-              result[pair.name] = pair.teacherReadable;
-            }
-          }
-        }
-      }
-
-      domens = result;
-
-      callback();
-    }
-  }
-
   Tuple2<String, String> resolveDomens(String lessonName) {
     if (lessonName.isNotEmpty) {
       String? mdk = RegExp(r'([А-Я]+.\d{1,2}.\d{1,2})').stringMatch(lessonName);
-      String match = domens.keys.firstWhere(
+      String match = _domens.keys.firstWhere(
           (element) =>
               (mdk != null && element.contains(mdk)) || element == lessonName,
           orElse: (() => ''));
 
       if (match.isNotEmpty) {
         if (lessonName == match || lessonName.length < match.length) {
-          return Tuple2(match, domens[match]!);
+          return Tuple2(match, _domens[match]!);
         }
       }
     }
@@ -482,7 +445,7 @@ class _LessonsViewState extends State<LessonsView> {
   }
 
   void callback() {
-    widget.callback(_isReplacementSelected, _lastReplacements, domens);
+    widget.callback(_isReplacementSelected, _lastReplacements, _domens);
   }
 
   void saveStateToStorage() {
@@ -494,6 +457,8 @@ class _LessonsViewState extends State<LessonsView> {
           _replacements,
           _timetable,
           _replacementsLoadingState,
+          _domens,
+          _isReplacementSelected
         ],
         identifier: widget.key);
   }
