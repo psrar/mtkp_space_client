@@ -109,7 +109,7 @@ class _SearchViewState extends State<SearchView> {
 
     return SharedAxisSwitcher(
       reverse: _option.isEmpty,
-      duration: const Duration(seconds: 1),
+      duration: const Duration(milliseconds: 600),
       child: _option.isNotEmpty
           ? LessonsView(
               key: ValueKey(_option),

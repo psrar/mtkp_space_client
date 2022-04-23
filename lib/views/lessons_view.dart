@@ -13,37 +13,36 @@ import 'package:mtkp/main.dart' as appGlobal;
 import 'package:mtkp/workers/caching.dart' as caching;
 import 'package:url_launcher/url_launcher.dart' as url_launcher;
 
-// final testTimetable = Timetable(
-//     Time('9:00', '10:30'),
-//     Time('10:50', '12:10'),
-//     Time('12:40', '14:00'),
-//     Time('14:30', '16:00'),
-//     Time('16:10', '17:40'),
-// Time('18:00', '19:30'));
-// final testWeekShedule = WeekShedule(Tuple3(testTimetable, [
-//   for (var i = 0; i < 6; i++)
-//     [
-//       for (var r = i; r < 6; r++)
-//         PairModel('Предмет', 'Учитель', '11${i.toString()}')
-//     ]
-// ], [
-//   for (var i = 0; i < 6; i++)
-//     [
-//       for (var r = i; r < 6; r++)
-//         PairModel('Эбабаба', 'Данаман', '22${i.toString()}')
-//     ]
-// ]));
-// const debug = true;
+final testTimetable = Timetable(
+    Time('9:00', '10:30'),
+    Time('10:50', '12:10'),
+    Time('12:40', '14:00'),
+    Time('14:30', '16:00'),
+    Time('16:10', '17:40'),
+    Time('18:00', '19:30'));
+final testWeekShedule = WeekShedule(Tuple3(testTimetable, [
+  for (var i = 0; i < 6; i++)
+    [
+      for (var r = i; r < 6; r++)
+        PairModel('Предмет', 'Учитель', '11${i.toString()}')
+    ]
+], [
+  for (var i = 0; i < 6; i++)
+    [
+      for (var r = i; r < 6; r++)
+        PairModel('Эбабаба', 'Данаман', '22${i.toString()}')
+    ]
+]));
 
 class LessonsView extends StatefulWidget {
   final bool dirty;
-  String selectedGroup;
-  bool inSearch;
+  final String selectedGroup;
+  final bool inSearch;
 
   final void Function(bool isReplacementSelected, DateTime? lastReplacements,
       Map<String, String> _domens) callback;
 
-  LessonsView(
+  const LessonsView(
       {Key? key,
       required this.selectedGroup,
       required this.callback,
@@ -268,6 +267,12 @@ class _LessonsViewState extends State<LessonsView> {
   }
 
   Future<void> tryLoadCache() async {
+    if (appGlobal.debugMode) {
+      _weekShedule = testWeekShedule;
+      _replacements = Replacements(null);
+      _timetable = testTimetable;
+      return;
+    }
     if (kIsWeb) return;
 
     await caching

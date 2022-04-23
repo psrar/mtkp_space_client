@@ -354,8 +354,9 @@ class SimpleDate implements Comparable<SimpleDate> {
   @override
   int compareTo(SimpleDate other) {
     if (day == other.day && month == other.month) return 0;
-    if ((other.month.num * 32 + other.day) - (month.num * 32 + day) < 0)
+    if ((other.month.num * 32 + other.day) - (month.num * 32 + day) < 0) {
       return 1;
+    }
 
     return -1;
   }

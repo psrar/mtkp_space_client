@@ -36,7 +36,6 @@ class _GroupsViewState extends State<GroupsView> {
   @override
   Widget build(BuildContext context) {
     var pg = _pinnedGroups.toList();
-    int k = 0;
 
     return Scaffold(
       appBar: AppBar(

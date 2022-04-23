@@ -1,6 +1,7 @@
 import 'package:animations/animations.dart';
 import 'package:mtkp/settings_model.dart';
 import 'package:mtkp/utils/internet_connection_checker.dart';
+import 'package:mtkp/views/navigator_view.dart';
 import 'package:mtkp/views/search_view/search_view.dart';
 import 'package:mtkp/views/settings_view.dart';
 import 'package:mtkp/database/database_interface.dart';
@@ -48,7 +49,7 @@ class _OverviewPageState extends State<OverviewPage> {
     _tryLoadCache();
     _requestGroups();
 
-    _views = List<Widget>.filled(4, Container(color: Colors.pinkAccent));
+    _views = List<Widget>.filled(5, Container(color: Colors.pinkAccent));
   }
 
   @override
@@ -64,11 +65,13 @@ class _OverviewPageState extends State<OverviewPage> {
               _inSearchShedule = _searchOption.isNotEmpty;
             }));
 
-    _views[2] = _selectedGroup == 'Группа'
+    _views[1] = const NavigatorView();
+
+    _views[3] = _selectedGroup == 'Группа'
         ? EmptyWelcome(
             loading: entryOptions.isEmpty && _selectedGroup == 'Группа')
         : DomensView(existingPairs: _domens);
-    _views[3] = _selectedGroup == 'Группа'
+    _views[4] = _selectedGroup == 'Группа'
         ? EmptyWelcome(
             loading: entryOptions.isEmpty && _selectedGroup == 'Группа')
         : const SettingsView();
@@ -94,7 +97,7 @@ class _OverviewPageState extends State<OverviewPage> {
             if (_selectedGroup != value) {
               _selectedGroup = value;
               needUpdateTrigger = true;
-              _selectedView = 1;
+              _selectedView = 2;
             }
           });
 
@@ -106,7 +109,7 @@ class _OverviewPageState extends State<OverviewPage> {
       ),
     );
 
-    _views[1] = _selectedGroup == 'Группа'
+    _views[2] = _selectedGroup == 'Группа'
         ? EmptyWelcome(
             loading: entryOptions.isEmpty && _selectedGroup == 'Группа')
         : LessonsView(
@@ -130,13 +133,16 @@ class _OverviewPageState extends State<OverviewPage> {
       case 0:
         title = layout.SharedAxisSwitcher(
           reverse: _searchOption.isEmpty,
-          duration: const Duration(seconds: 1),
+          duration: const Duration(milliseconds: 600),
           child: Row(key: ValueKey(_searchOption), children: [
             _searchOption.isEmpty ? const Text('Поиск') : Text(_searchOption)
           ]),
         );
         break;
       case 1:
+        title = Row(children: const [Text('Навигация')]);
+        break;
+      case 2:
         title = layout.SharedAxisSwitcher(
           reverse: !_isReplacementSelected,
           child: Row(
@@ -165,10 +171,10 @@ class _OverviewPageState extends State<OverviewPage> {
           ),
         );
         break;
-      case 2:
+      case 3:
         title = Row(children: const [Text('Предметы')]);
         break;
-      case 3:
+      case 4:
         title = Row(children: const [Text('Настройки')]);
         break;
       default:
@@ -198,7 +204,7 @@ class _OverviewPageState extends State<OverviewPage> {
               BottomNavigationBarItem(
                   icon: layout.SharedAxisSwitcher(
                     reverse: _inSearchShedule,
-                    duration: const Duration(seconds: 1),
+                    duration: const Duration(milliseconds: 600),
                     child: _inSearchShedule
                         ? Icon(Icons.arrow_downward_rounded,
                             color: appGlobal.focusColor,
@@ -207,6 +213,8 @@ class _OverviewPageState extends State<OverviewPage> {
                             key: ValueKey(_inSearchShedule)),
                   ),
                   label: 'Поиск'),
+              const BottomNavigationBarItem(
+                  icon: Icon(Icons.pin_drop_rounded), label: 'Навигация'),
               const BottomNavigationBarItem(
                   icon: Icon(Icons.view_day_rounded), label: 'Расписание'),
               const BottomNavigationBarItem(
@@ -218,7 +226,7 @@ class _OverviewPageState extends State<OverviewPage> {
           bucket: _bucket,
           child: layout.SharedAxisSwitcher(
             reverse: appbarAnimationDirection,
-            duration: const Duration(milliseconds: 500),
+            duration: const Duration(milliseconds: 600),
             transitionType: SharedAxisTransitionType.horizontal,
             child: _views[_selectedView],
           ),
@@ -226,6 +234,14 @@ class _OverviewPageState extends State<OverviewPage> {
   }
 
   Future<void> _tryLoadCache() async {
+    if (appGlobal.debugMode) {
+      setState(() {
+        _selectedGroup = 'Тест';
+        cachedPinnedGroups = ['ТИП-00', 'ХУу-666'];
+      });
+      return;
+    }
+
     if (kIsWeb) return;
 
     var gr = (await loadWeekSheduleCache())?.item1 ?? 'Группа';

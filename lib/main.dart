@@ -1,4 +1,6 @@
 // import 'package:diary/background_worker.dart';
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -16,12 +18,12 @@ void main() async {
 
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
-  if (!kIsWeb) {
+  if (!kIsWeb && !Platform.isLinux) {
     NotificationHandler().initializePlugin();
     initAlarmManager();
   }
 
-  if (!kIsWeb) {
+  if (!kIsWeb && !Platform.isLinux) {
     loadSettings().then((value) {
       settings = value;
       if (value['background_enabled']) startShedule();
@@ -30,6 +32,8 @@ void main() async {
 
   runApp(const MyApp());
 }
+
+const bool debugMode = false;
 
 const Color errorColor = Colors.red;
 const Color focusColor = Color.fromARGB(255, 255, 90, 131);
@@ -66,7 +70,8 @@ class MyApp extends StatelessWidget {
               showSelectedLabels: false,
               selectedIconTheme: IconThemeData(color: primaryColor, size: 32),
               unselectedIconTheme: IconThemeData(color: Colors.grey),
-              type: BottomNavigationBarType.fixed),
+              type: BottomNavigationBarType.fixed,
+              elevation: 1),
           textTheme: TextTheme(
               headline6: GoogleFonts.rubik(
                   color: Colors.white,
