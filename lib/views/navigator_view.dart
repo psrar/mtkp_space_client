@@ -2,13 +2,16 @@
 ///pinch_zoom package https://pub.dev/packages/pinch_zoom
 ///by https://pub.dev/publishers/jelter.net
 ///
-///InteractiveViewer's _kDrag value for inetrtia was changed to zero
+///InteractiveViewer's _kDrag value for inertia was changed to zero
 
 import 'package:flutter/material.dart';
 import 'package:tuple/tuple.dart';
 import 'package:mtkp/main.dart' as app_global;
 
 const imageDimensions = Tuple2(774.0, 1080.0);
+const double markerSize = 24;
+const double markerLeftOffset = -markerSize / 2;
+const double markerTopOffset = -markerSize / 1.1;
 
 class NavigatorView extends StatefulWidget {
   const NavigatorView({Key? key}) : super(key: key);
@@ -21,8 +24,13 @@ class _NavigatorViewState extends State<NavigatorView>
     with SingleTickerProviderStateMixin {
   final _transformationController = TransformationController();
 
-  double markerLeft = 10;
-  double markerTop = 10;
+  late double markerLeft;
+  late double markerTop;
+
+  late double realWidth;
+  late double realHeight;
+  late double zoomOriginX;
+  late double zoomOriginY;
 
   late Animation<Matrix4> _animationReset;
   late AnimationController _controllerReset;
@@ -30,50 +38,60 @@ class _NavigatorViewState extends State<NavigatorView>
   @override
   void initState() {
     super.initState();
-    // _transformationController.value = Matrix4.translationValues(
-    //     -imageDimensions.item1 *
-    //         _transformationController.value.getMaxScaleOnAxis() /
-    //         2,
-    //     -imageDimensions.item2 *
-    //         _transformationController.value.getMaxScaleOnAxis() /
-    //         2,
-    //     0);
+
     _controllerReset = AnimationController(
-      duration: const Duration(milliseconds: 500),
-      vsync: this,
-    );
+        duration: const Duration(milliseconds: 500), vsync: this);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    realWidth = MediaQuery.of(context).size.width;
+    realHeight = realWidth * imageDimensions.item2 / imageDimensions.item1;
+    zoomOriginX = realWidth / 2;
+    zoomOriginY = realHeight / 3;
   }
 
   @override
   Widget build(BuildContext context) {
+    markerLeft = 10 + markerLeftOffset;
+    markerTop = 10 + markerTopOffset;
     return Column(
       children: [
-        GestureDetector(
-          onDoubleTap: () => _animateResetInitialize(),
-          child: InteractiveViewer(
-            boundaryMargin: const EdgeInsets.all(20),
-            child: Stack(children: [
-              const Image(
-                  image: AssetImage('assets/building_plan/building_plan.jpg')),
-              Positioned(
-                left: markerLeft,
-                top: markerTop,
-                child: const Icon(
-                  Icons.place_sharp,
-                  color: app_global.errorColor,
-                  size: 16,
+        Expanded(
+          flex: 3,
+          child: GestureDetector(
+            onDoubleTap: () => _animateResetInitialize(),
+            child: InteractiveViewer(
+              constrained: false,
+              boundaryMargin: const EdgeInsets.all(800),
+              child: Stack(children: [
+                Image(
+                    width: MediaQuery.of(context).size.width,
+                    image: const AssetImage(
+                        'assets/building_plan/building_plan.jpg')),
+                Positioned(
+                  left: markerLeft,
+                  top: markerTop,
+                  child: const Icon(
+                    Icons.place_sharp,
+                    color: app_global.errorColor,
+                    size: markerSize,
+                  ),
                 ),
-              ),
-            ]),
-            onInteractionStart: (_) {
-              if (_controllerReset.status == AnimationStatus.forward) {
-                _animateResetStop();
-              }
-            },
-            // onInteractionEnd: (_) => _animateResetInitialize(),
-            transformationController: _transformationController,
+              ]),
+              onInteractionStart: (_) {
+                if (_controllerReset.status == AnimationStatus.forward) {
+                  _animateResetStop();
+                }
+              },
+              // onInteractionEnd: (_) => _animateResetInitialize(),
+              transformationController: _transformationController,
+            ),
           ),
         ),
+        Expanded(child: Container())
       ],
     );
   }
@@ -96,10 +114,18 @@ class _NavigatorViewState extends State<NavigatorView>
 
   /// Start resetting the animation
   void _animateResetInitialize() {
+    var t = _transformationController.value.clone();
+    t.translate(
+        -_transformationController.toScene(Offset.zero).dx -
+            zoomOriginX / t.getMaxScaleOnAxis(),
+        -_transformationController.toScene(Offset.zero).dy -
+            zoomOriginY / t.getMaxScaleOnAxis());
+    t.scale(1.999);
+
     _controllerReset.reset();
     _animationReset = Matrix4Tween(
       begin: _transformationController.value,
-      end: Matrix4.identity(),
+      end: t,
     ).animate(
         CurvedAnimation(parent: _controllerReset, curve: Curves.easeOutExpo));
     _animationReset.addListener(_onAnimateReset);
