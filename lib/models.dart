@@ -5,6 +5,8 @@ import 'package:tuple/tuple.dart';
 
 part 'models.g.dart';
 
+Map<String, Tuple2<double, double>> a = {};
+
 class Weekday {
   final String _value;
   const Weekday._internal(this._value);

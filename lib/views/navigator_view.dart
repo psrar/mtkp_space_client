@@ -4,17 +4,19 @@
 ///
 ///InteractiveViewer's _kDrag value for inertia was changed to zero
 
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:tuple/tuple.dart';
 import 'package:mtkp/main.dart' as app_global;
 
 const imageDimensions = Tuple2(774.0, 1080.0);
-const double markerSize = 24;
+const double markerSize = 32;
 const double markerLeftOffset = -markerSize / 2;
-const double markerTopOffset = -markerSize / 1.1;
+const double markerTopOffset = -markerSize / 1.05;
 
 class NavigatorView extends StatefulWidget {
-  const NavigatorView({Key? key}) : super(key: key);
+  const NavigatorView({Key? key, String cabName = ''}) : super(key: key);
 
   @override
   State<NavigatorView> createState() => _NavigatorViewState();
@@ -24,13 +26,17 @@ class _NavigatorViewState extends State<NavigatorView>
     with SingleTickerProviderStateMixin {
   final _transformationController = TransformationController();
 
-  late double markerLeft;
-  late double markerTop;
+  late double oldMarkerLeft;
+  late double oldMarkerTop;
+  late double newMarkerLeft;
+  late double newMarkerTop;
 
   late double realWidth;
   late double realHeight;
   late double zoomOriginX;
   late double zoomOriginY;
+
+  late double scaling;
 
   late Animation<Matrix4> _animationReset;
   late AnimationController _controllerReset;
@@ -46,17 +52,17 @@ class _NavigatorViewState extends State<NavigatorView>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
+//445, 330
     realWidth = MediaQuery.of(context).size.width;
     realHeight = realWidth * imageDimensions.item2 / imageDimensions.item1;
-    zoomOriginX = realWidth / 2;
-    zoomOriginY = realHeight / 3;
   }
 
   @override
   Widget build(BuildContext context) {
-    markerLeft = 10 + markerLeftOffset;
-    markerTop = 10 + markerTopOffset;
+    oldMarkerLeft = realWidth + markerLeftOffset;
+    oldMarkerTop = realHeight + markerTopOffset;
+    newMarkerLeft = (445 + markerLeftOffset);
+    newMarkerTop = (380 + markerTopOffset);
     return Column(
       children: [
         Expanded(
@@ -64,19 +70,27 @@ class _NavigatorViewState extends State<NavigatorView>
           child: GestureDetector(
             onDoubleTap: () => _animateResetInitialize(),
             child: InteractiveViewer(
+              minScale: 1,
               constrained: false,
-              boundaryMargin: const EdgeInsets.all(800),
               child: Stack(children: [
-                Image(
-                    width: MediaQuery.of(context).size.width,
-                    image: const AssetImage(
-                        'assets/building_plan/building_plan.jpg')),
+                const Image(
+                    image:
+                        AssetImage('assets/building_plan/building_plan.jpg')),
                 Positioned(
-                  left: markerLeft,
-                  top: markerTop,
+                  left: oldMarkerLeft,
+                  top: oldMarkerTop,
                   child: const Icon(
                     Icons.place_sharp,
                     color: app_global.errorColor,
+                    size: markerSize,
+                  ),
+                ),
+                Positioned(
+                  left: newMarkerLeft,
+                  top: newMarkerTop,
+                  child: const Icon(
+                    Icons.place_sharp,
+                    color: app_global.primaryColor,
                     size: markerSize,
                   ),
                 ),
@@ -115,12 +129,36 @@ class _NavigatorViewState extends State<NavigatorView>
   /// Start resetting the animation
   void _animateResetInitialize() {
     var t = _transformationController.value.clone();
-    t.translate(
-        -_transformationController.toScene(Offset.zero).dx -
-            zoomOriginX / t.getMaxScaleOnAxis(),
-        -_transformationController.toScene(Offset.zero).dy -
-            zoomOriginY / t.getMaxScaleOnAxis());
-    t.scale(1.999);
+
+    var lx = min(oldMarkerLeft, newMarkerLeft);
+    var hx = max(oldMarkerLeft, newMarkerLeft);
+
+    var ly = min(oldMarkerTop, newMarkerTop);
+    var hy = max(oldMarkerTop, newMarkerTop);
+
+    zoomOriginX = _transformationController.toScene(Offset.zero).dx -
+        hx +
+        (hx - lx) / 2 +
+        markerLeftOffset;
+    zoomOriginY = _transformationController.toScene(Offset.zero).dy -
+        hy +
+        (hy - ly) / 2 +
+        markerTopOffset;
+
+    hx -= lx;
+    hy -= ly;
+    scaling = hx > hy ? realWidth / hx / 1.6 : realHeight / hy / 1.6;
+
+//Sets zoom origins in center and scales
+    t.translate(zoomOriginX, zoomOriginY);
+    var dx = t.getTranslation().x / t.getMaxScaleOnAxis();
+    var dy = t.getTranslation().y / t.getMaxScaleOnAxis();
+    t.scale(scaling / t.getMaxScaleOnAxis());
+    dx -= t.getTranslation().x / t.getMaxScaleOnAxis() -
+        realWidth / 2 / t.getMaxScaleOnAxis();
+    dy -= t.getTranslation().y / t.getMaxScaleOnAxis() -
+        realHeight / 2.5 / t.getMaxScaleOnAxis();
+    t.translate(dx, dy);
 
     _controllerReset.reset();
     _animationReset = Matrix4Tween(
