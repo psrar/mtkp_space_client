@@ -3,7 +3,7 @@ import 'package:mtkp/models.dart';
 import 'package:flutter/material.dart';
 import 'package:tuple/tuple.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:mtkp/main.dart' as appGlobal;
+import 'package:mtkp/main.dart' as app_global;
 
 import 'layout.dart' show ColoredTextButton;
 
@@ -11,8 +11,10 @@ AutoSizeGroup _sizeGroup = AutoSizeGroup();
 
 class SheduleContentWidget extends StatelessWidget {
   final Tuple2<Timetable, List<PairModel?>?> dayShedule;
+  final void Function(String classroom) onClassroomTap;
 
-  const SheduleContentWidget({Key? key, required this.dayShedule})
+  const SheduleContentWidget(
+      {Key? key, required this.dayShedule, required this.onClassroomTap})
       : super(key: key);
 
   @override
@@ -26,17 +28,17 @@ class SheduleContentWidget extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             const Icon(Icons.cake_rounded,
-                color: appGlobal.accessColor, size: 74),
+                color: app_global.accessColor, size: 74),
             Text(
               'Выходной!',
-              style: appGlobal.headerFont,
+              style: app_global.headerFont,
             ),
             ColoredTextButton(
               text: 'Проверить самостоятельно',
               onPressed: () async => await launch('https://vk.com/mtkp_bmstu'),
               foregroundColor: Colors.white,
-              boxColor: appGlobal.accessColor,
-              splashColor: appGlobal.accessColor,
+              boxColor: app_global.accessColor,
+              splashColor: app_global.accessColor,
               outlined: true,
             ),
           ],
@@ -50,8 +52,10 @@ class SheduleContentWidget extends StatelessWidget {
         if (lessons[i] == null) {
           lessonsWidgetList.add(EmptyLessonWidget(time: time!));
         } else {
-          lessonsWidgetList
-              .add(LessonWidget(time: time!, lessonModel: lessons[i]!));
+          lessonsWidgetList.add(LessonWidget(
+              time: time!,
+              lessonModel: lessons[i]!,
+              onClassroomTap: onClassroomTap));
         }
       } else {
         lessonsWidgetList.add(EmptyLessonWidget(time: time!));
@@ -81,7 +85,13 @@ class LessonWidget extends StatelessWidget {
   final PairModel lessonModel;
   final Time time;
 
-  const LessonWidget({Key? key, required this.time, required this.lessonModel})
+  final void Function(String classroom) onClassroomTap;
+
+  const LessonWidget(
+      {Key? key,
+      required this.time,
+      required this.lessonModel,
+      required this.onClassroomTap})
       : super(key: key);
 
   @override
@@ -90,8 +100,8 @@ class LessonWidget extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
-            width: 48,
+            padding: const EdgeInsets.all(4),
+            width: 56,
             decoration: const BoxDecoration(
                 border: Border(right: BorderSide(color: Colors.black26))),
             child: Column(
@@ -99,7 +109,7 @@ class LessonWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Expanded(
-                  flex: 2,
+                  flex: 4,
                   child: AutoSizeText(
                     time.start + '\n' + time.end,
                     textAlign: TextAlign.right,
@@ -111,18 +121,22 @@ class LessonWidget extends StatelessWidget {
                   height: 8,
                 ),
                 Expanded(
-                  child: AutoSizeText(
-                    '${lessonModel.roomReadable}',
-                    textAlign: TextAlign.right,
-                    minFontSize: 4,
+                  flex: 3,
+                  child: InkWell(
+                    onTap: () => onClassroomTap('${lessonModel.roomReadable}'),
+                    child: AutoSizeText(
+                      '${lessonModel.roomReadable}',
+                      textAlign: TextAlign.right,
+                      minFontSize: 4,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
           Expanded(
-            child: Container(
-              padding: const EdgeInsets.all(4),
+            child: Padding(
+              padding: const EdgeInsets.all(4.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -174,7 +188,7 @@ class EmptyLessonWidget extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
-            width: 48,
+            width: 56,
             decoration: const BoxDecoration(
                 border: Border(right: BorderSide(color: Colors.black26))),
             child: Column(

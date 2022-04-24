@@ -1,3 +1,6 @@
+import 'dart:developer';
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -37,17 +40,22 @@ final testWeekShedule = WeekShedule(Tuple3(testTimetable, [
 class LessonsView extends StatefulWidget {
   final bool dirty;
   final String selectedGroup;
+  final bool forTeacher;
   final bool inSearch;
 
   final void Function(bool isReplacementSelected, DateTime? lastReplacements,
       Map<String, String> _domens) callback;
 
+  final void Function(String classroom) onClassroomTap;
+
   const LessonsView(
       {Key? key,
       required this.selectedGroup,
+      required this.forTeacher,
       required this.callback,
       required this.dirty,
-      required this.inSearch})
+      required this.inSearch,
+      required this.onClassroomTap})
       : super(key: key);
 
   @override
@@ -135,8 +143,9 @@ class _LessonsViewState extends State<LessonsView> {
                 _requestReplacements(widget.selectedGroup, 2);
               }));
     } else {
-      sheduleContentWidget =
-          SheduleContentWidget(dayShedule: Tuple2(_timetable, dayShedule));
+      sheduleContentWidget = SheduleContentWidget(
+          dayShedule: Tuple2(_timetable, dayShedule),
+          onClassroomTap: widget.onClassroomTap);
     }
 
     var sheduleWidget = AnimatedContainer(
@@ -220,9 +229,9 @@ class _LessonsViewState extends State<LessonsView> {
       await tryLoadCache();
 
       await checkInternetConnection(() async {
-        await _requestShedule(widget.selectedGroup);
+        await _requestShedule(widget.selectedGroup, widget.forTeacher);
         await _requestReplacements(widget.selectedGroup, 2);
-        if (mounted) saveStateToStorage();
+        saveStateToStorage();
         _dirty = false;
       });
 
@@ -238,6 +247,19 @@ class _LessonsViewState extends State<LessonsView> {
         _domens = state[5];
         _isReplacementSelected = state[6];
       });
+
+      if (_replacementsLoadingState == 0) {
+        await checkInternetConnection(() async {
+          await _requestShedule(widget.selectedGroup, widget.forTeacher);
+          await _requestReplacements(widget.selectedGroup, 2);
+          saveStateToStorage();
+          _dirty = false;
+        });
+
+        _domens = buildDomensMap(_weekShedule);
+        saveStateToStorage();
+        callback();
+      }
     }
 
     if (_replacements
@@ -259,9 +281,9 @@ class _LessonsViewState extends State<LessonsView> {
       });
 
       await checkInternetConnection(() async {
-        await _requestShedule(widget.selectedGroup);
+        await _requestShedule(widget.selectedGroup, widget.forTeacher);
         await _requestReplacements(widget.selectedGroup, 2);
-        if (mounted) saveStateToStorage();
+        saveStateToStorage();
       });
     }
   }
@@ -301,8 +323,87 @@ class _LessonsViewState extends State<LessonsView> {
     setState(() {});
   }
 
-  Future<void> _requestShedule(String group) async {
-    if (group != 'Группа') {
+  Future<void> _requestShedule(String group, bool forTeacher) async {
+    if (forTeacher) {
+      try {
+        var id = int.parse(RegExp('^([0-9]+)(?=~)').stringMatch(group)!);
+        var name = group.split('~')[1];
+        var result = await DatabaseWorker.currentDatabaseWorker!
+            .getSheduleForTeacher(id);
+
+        //upcycle
+        var up = <List<PairModel?>>[];
+        var down = <List<PairModel?>>[];
+        var day = 1;
+        bool cf = true;
+        var downFlag = false;
+        for (var k = 0; k < result.length;) {
+          var lessons = <PairModel?>[];
+          var r = result[k];
+
+          downFlag = r['down'];
+          if (cf && downFlag == true) {
+            cf = false;
+            if (result[k - 1]['weekday'] == r['weekday']) {
+              day = 1;
+            }
+          }
+          for (var l = 1; l < 7; l++) {
+            if (r['weekday'] == day && r['queue'] == l) {
+              lessons.add(PairModel(r['subject'], name, r['room']));
+              if (k == result.length - 1) break;
+              r = result[++k];
+            } else {
+              lessons.add(null);
+            }
+          }
+          while (lessons.length < 6) {
+            lessons.add(null);
+          }
+          day++;
+          if (downFlag) {
+            down.add(lessons);
+            if (down.length == 6) break;
+          } else {
+            up.add(lessons);
+          }
+        }
+
+        DatabaseWorker.currentDatabaseWorker!.getTimeshedule().then((value) {
+          if (value.length == 6) {
+            var times = <List<String>>[];
+            for (var i = 0; i < 6; i++) {
+              times.add(value[i].split('-'));
+            }
+            _timetable = Timetable(
+                Time(times[0][0], times[0][1]),
+                Time(times[1][0], times[1][1]),
+                Time(times[2][0], times[2][1]),
+                Time(times[3][0], times[3][1]),
+                Time(times[4][0], times[4][1]),
+                Time(times[5][0], times[5][1]));
+          }
+
+          if (mounted) {
+            setState(() {
+              _weekShedule = WeekShedule(Tuple3(_timetable, up, down));
+            });
+          }
+
+          _domens = buildDomensMap(_weekShedule);
+          saveStateToStorage();
+          callback();
+
+          if (_weekShedule != null) {
+            caching.saveWeekshedule(
+                widget.selectedGroup, _weekShedule!, widget.inSearch);
+          }
+        });
+      } catch (e) {
+        log('Ошибка при парсинге расписания для преподавателей: ' +
+            e.toString());
+      }
+    } else if (group != 'Группа') {
       try {
         await DatabaseWorker.currentDatabaseWorker!
             .getShedule(group)
@@ -367,7 +468,9 @@ class _LessonsViewState extends State<LessonsView> {
           });
         });
       } catch (e) {
-        Fluttertoast.showToast(msg: e.toString());
+        if (!Platform.isLinux) {
+          Fluttertoast.showToast(msg: e.toString());
+        }
       }
     }
 
@@ -454,18 +557,20 @@ class _LessonsViewState extends State<LessonsView> {
   }
 
   void saveStateToStorage() {
-    storage!.writeState(
-        context,
-        [
-          widget.selectedGroup,
-          _weekShedule,
-          _replacements,
-          _timetable,
-          _replacementsLoadingState,
-          _domens,
-          _isReplacementSelected
-        ],
-        identifier: widget.key);
+    if (mounted) {
+      storage!.writeState(
+          context,
+          [
+            widget.selectedGroup,
+            _weekShedule,
+            _replacements,
+            _timetable,
+            _replacementsLoadingState,
+            _domens,
+            _isReplacementSelected
+          ],
+          identifier: widget.key);
+    }
   }
 }
 

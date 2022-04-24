@@ -4,9 +4,11 @@
 ///
 ///InteractiveViewer's _kDrag value for inertia was changed to zero
 
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:mtkp/models.dart';
 import 'package:tuple/tuple.dart';
 import 'package:mtkp/main.dart' as app_global;
 
@@ -16,7 +18,12 @@ const double markerLeftOffset = -markerSize / 2;
 const double markerTopOffset = -markerSize / 1.05;
 
 class NavigatorView extends StatefulWidget {
-  const NavigatorView({Key? key, String cabName = ''}) : super(key: key);
+  final String previousOrSingleClassroom;
+  final String nextClassroom;
+
+  const NavigatorView(
+      {Key? key, this.previousOrSingleClassroom = '', this.nextClassroom = ''})
+      : super(key: key);
 
   @override
   State<NavigatorView> createState() => _NavigatorViewState();
@@ -26,56 +33,81 @@ class _NavigatorViewState extends State<NavigatorView>
     with SingleTickerProviderStateMixin {
   final _transformationController = TransformationController();
 
-  late double oldMarkerLeft;
-  late double oldMarkerTop;
-  late double newMarkerLeft;
-  late double newMarkerTop;
+  late String _previousOrSingleClassroom;
+  late String _nextClassroom;
+
+  double? oldMarkerLeft;
+  double? oldMarkerTop;
+  double? newMarkerLeft;
+  double? newMarkerTop;
 
   late double realWidth;
   late double realHeight;
-  late double zoomOriginX;
-  late double zoomOriginY;
+  double? zoomOriginX;
+  double? zoomOriginY;
 
-  late double scaling;
+  double? scaling;
 
   late Animation<Matrix4> _animationReset;
   late AnimationController _controllerReset;
+
+  Widget? zeroPointCard;
+  Widget? singlePointCard;
+  Widget? twoPointsCard;
+
+  late int mode = 0;
+  late PageStorageBucket storage;
+
+  StreamSubscription<dynamic>? _sub;
 
   @override
   void initState() {
     super.initState();
 
+    storage = PageStorage.of(context)!;
+    // var data = storage.readState(context, identifier: widget.key);
+    // if (data == null) {
+    _previousOrSingleClassroom = widget.previousOrSingleClassroom;
+    _nextClassroom = widget.nextClassroom;
+    // } else {
+    //   _previousOrSingleClassroom = data[0];
+    //   _nextClassroom = data[1];
+    // }
+
     _controllerReset = AnimationController(
-        duration: const Duration(milliseconds: 500), vsync: this);
+        duration: const Duration(milliseconds: 1500), vsync: this);
+
+    buildInformationCard();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-//445, 330
     realWidth = MediaQuery.of(context).size.width;
     realHeight = realWidth * imageDimensions.item2 / imageDimensions.item1;
+    _transformationController.value =
+        Matrix4.identity().scaled(realWidth / imageDimensions.item1);
+    _animateResetInitialize();
   }
 
   @override
   Widget build(BuildContext context) {
-    oldMarkerLeft = realWidth + markerLeftOffset;
-    oldMarkerTop = realHeight + markerTopOffset;
-    newMarkerLeft = (445 + markerLeftOffset);
-    newMarkerTop = (380 + markerTopOffset);
+    buildInformationCard();
+
     return Column(
       children: [
         Expanded(
-          flex: 3,
-          child: GestureDetector(
-            onDoubleTap: () => _animateResetInitialize(),
-            child: InteractiveViewer(
-              minScale: 1,
-              constrained: false,
-              child: Stack(children: [
-                const Image(
-                    image:
-                        AssetImage('assets/building_plan/building_plan.jpg')),
+          flex: 4,
+          child: InteractiveViewer(
+            clipBehavior: Clip.none,
+            boundaryMargin: const EdgeInsets.all(200),
+            minScale: 1,
+            constrained: false,
+            child: Stack(children: [
+              const Image(
+                  alignment: Alignment.center,
+                  image: AssetImage('assets/building_plan/building_plan.jpg')),
+              if (mode == 1)
                 Positioned(
                   left: oldMarkerLeft,
                   top: oldMarkerTop,
@@ -85,6 +117,7 @@ class _NavigatorViewState extends State<NavigatorView>
                     size: markerSize,
                   ),
                 ),
+              if (mode == 2)
                 Positioned(
                   left: newMarkerLeft,
                   top: newMarkerTop,
@@ -94,20 +127,120 @@ class _NavigatorViewState extends State<NavigatorView>
                     size: markerSize,
                   ),
                 ),
-              ]),
-              onInteractionStart: (_) {
-                if (_controllerReset.status == AnimationStatus.forward) {
-                  _animateResetStop();
-                }
-              },
-              // onInteractionEnd: (_) => _animateResetInitialize(),
-              transformationController: _transformationController,
-            ),
+            ]),
+            onInteractionStart: (_) {
+              _sub?.cancel();
+              if (_controllerReset.status == AnimationStatus.forward) {
+                _animateResetStop();
+              }
+            },
+            onInteractionEnd: mode == 0
+                ? (_) => _startResetTimer()
+                : (_) => _animateResetInitialize(),
+            transformationController: _transformationController,
           ),
         ),
-        Expanded(child: Container())
+        Expanded(
+            child: Container(
+                padding: const EdgeInsets.all(18),
+                decoration: const BoxDecoration(
+                    color: Color.fromARGB(255, 69, 69, 69),
+                    borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(18),
+                        topRight: Radius.circular(18))),
+                child: mode == 1
+                    ? singlePointCard
+                    : mode == 2
+                        ? twoPointsCard
+                        : zeroPointCard))
       ],
     );
+  }
+
+  Future resettingTimer() async {
+    await Future.delayed(const Duration(seconds: 2));
+  }
+
+  void _startResetTimer() {
+    _sub = resettingTimer()
+        .asStream()
+        .listen((data) => _animateResetInitialize(true));
+  }
+
+  void buildInformationCard() {
+    if (_previousOrSingleClassroom.isNotEmpty) {
+      var classroom = classrooms[_previousOrSingleClassroom]!;
+      oldMarkerLeft = classroom.item1 + markerLeftOffset;
+      oldMarkerTop = classroom.item2 + markerTopOffset;
+
+      if (widget.nextClassroom.isEmpty) {
+        mode = 1;
+
+        String s;
+        s = _previousOrSingleClassroom[0];
+        switch (s) {
+          case '1':
+          case 'Б':
+          case 'б':
+            s = 'Первый этаж';
+            break;
+          case '2':
+            s = 'Второй этаж';
+            break;
+          case '3':
+            s = 'Третий этаж';
+            break;
+          case '4':
+            s = 'Четвертый этаж';
+            break;
+          default:
+            s = 'Не в здании';
+        }
+
+        singlePointCard = Stack(children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(s, style: app_global.giantFont),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.place_rounded,
+                    color: app_global.errorColor,
+                    size: 32,
+                  ),
+                  Text(
+                    _previousOrSingleClassroom,
+                    style: app_global.giantFont,
+                  ),
+                ],
+              )
+            ],
+          ),
+          Align(
+              alignment: Alignment.topRight,
+              child: IconButton(
+                  color: app_global.primaryColor,
+                  hoverColor: app_global.errorColor,
+                  iconSize: 36,
+                  onPressed: () {
+                    storage.writeState(context, ['', ''],
+                        identifier: widget.key);
+                    _animateResetStop();
+                    _animateResetInitialize(true);
+                  },
+                  icon: const Icon(Icons.cancel))),
+        ]);
+      } else {}
+    } else {
+      mode = 0;
+      zeroPointCard = Center(
+        child: Text(
+          'Схема кабинетов',
+          style: app_global.giantFont,
+        ),
+      );
+    }
   }
 
   @override
@@ -127,38 +260,58 @@ class _NavigatorViewState extends State<NavigatorView>
   }
 
   /// Start resetting the animation
-  void _animateResetInitialize() {
-    var t = _transformationController.value.clone();
+  void _animateResetInitialize([bool fullReset = false]) {
+    var t;
 
-    var lx = min(oldMarkerLeft, newMarkerLeft);
-    var hx = max(oldMarkerLeft, newMarkerLeft);
+    if (!fullReset && mode != 0) {
+      if (mode == 2) {
+        var lx = min(oldMarkerLeft!, newMarkerLeft!);
+        var hx = max(oldMarkerLeft!, newMarkerLeft!);
 
-    var ly = min(oldMarkerTop, newMarkerTop);
-    var hy = max(oldMarkerTop, newMarkerTop);
+        var ly = min(oldMarkerTop!, newMarkerTop!);
+        var hy = max(oldMarkerTop!, newMarkerTop!);
 
-    zoomOriginX = _transformationController.toScene(Offset.zero).dx -
-        hx +
-        (hx - lx) / 2 +
-        markerLeftOffset;
-    zoomOriginY = _transformationController.toScene(Offset.zero).dy -
-        hy +
-        (hy - ly) / 2 +
-        markerTopOffset;
+        zoomOriginX = _transformationController.toScene(Offset.zero).dx -
+            hx +
+            (hx - lx) / 2 +
+            markerLeftOffset;
+        zoomOriginY = _transformationController.toScene(Offset.zero).dy -
+            hy +
+            (hy - ly) / 2 +
+            markerTopOffset;
 
-    hx -= lx;
-    hy -= ly;
-    scaling = hx > hy ? realWidth / hx / 1.6 : realHeight / hy / 1.6;
+        hx -= lx;
+        hy -= ly;
+        scaling = hx > hy ? realWidth / hx / 1.6 : realHeight / hy / 1.6;
+      } else if (mode == 1) {
+        zoomOriginX = _transformationController.toScene(Offset.zero).dx -
+            oldMarkerLeft! +
+            markerLeftOffset;
+        zoomOriginY = _transformationController.toScene(Offset.zero).dy -
+            oldMarkerTop! +
+            markerTopOffset;
 
-//Sets zoom origins in center and scales
-    t.translate(zoomOriginX, zoomOriginY);
-    var dx = t.getTranslation().x / t.getMaxScaleOnAxis();
-    var dy = t.getTranslation().y / t.getMaxScaleOnAxis();
-    t.scale(scaling / t.getMaxScaleOnAxis());
-    dx -= t.getTranslation().x / t.getMaxScaleOnAxis() -
-        realWidth / 2 / t.getMaxScaleOnAxis();
-    dy -= t.getTranslation().y / t.getMaxScaleOnAxis() -
-        realHeight / 2.5 / t.getMaxScaleOnAxis();
-    t.translate(dx, dy);
+        scaling = 1.2;
+      }
+
+      //Sets zoom origins in center and scales
+      t = _transformationController.value.clone();
+      t.translate(zoomOriginX, zoomOriginY!);
+      var dx = t.getTranslation().x / t.getMaxScaleOnAxis();
+      var dy = t.getTranslation().y / t.getMaxScaleOnAxis();
+      t.scale(scaling! / t.getMaxScaleOnAxis());
+      dx -= t.getTranslation().x / t.getMaxScaleOnAxis() -
+          realWidth / 2 / t.getMaxScaleOnAxis();
+      dy -= t.getTranslation().y / t.getMaxScaleOnAxis() -
+          realHeight / 2.4 / t.getMaxScaleOnAxis();
+      t.translate(dx, dy);
+    } else {
+      _previousOrSingleClassroom = '';
+      setState(() {
+        buildInformationCard();
+      });
+      t = Matrix4.identity().scaled(realWidth / imageDimensions.item1);
+    }
 
     _controllerReset.reset();
     _animationReset = Matrix4Tween(

@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:animations/animations.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mtkp/settings_model.dart';
 import 'package:mtkp/utils/internet_connection_checker.dart';
 import 'package:mtkp/views/navigator_view.dart';
@@ -13,7 +16,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:mtkp/workers/caching.dart';
 import 'package:mtkp/workers/file_worker.dart';
-import 'package:mtkp/main.dart' as appGlobal;
+import 'package:mtkp/main.dart' as app_global;
+import 'package:tuple/tuple.dart';
 
 class OverviewPage extends StatefulWidget {
   const OverviewPage({Key? key}) : super(key: key);
@@ -41,6 +45,9 @@ class _OverviewPageState extends State<OverviewPage> {
   String _searchOption = '';
 
   List<String> cachedPinnedGroups = [];
+  List<Tuple2<int, String>> cachedPinnedTeachers = [];
+
+  String _searchedClassroom = '';
 
   @override
   void initState() {
@@ -59,13 +66,18 @@ class _OverviewPageState extends State<OverviewPage> {
     _views[0] = SearchView(
         key: const PageStorageKey("Search"),
         pinnedGroups: cachedPinnedGroups,
+        pinnedTeachers: cachedPinnedTeachers,
         option: _searchOption,
+        onClassroomTap: (c) => handleClassroomTap(c),
         callback: (newSearchOption) => setState(() {
               _searchOption = newSearchOption;
               _inSearchShedule = _searchOption.isNotEmpty;
             }));
 
-    _views[1] = const NavigatorView();
+    _views[1] = NavigatorView(
+      key: const PageStorageKey("Navigator"),
+      previousOrSingleClassroom: _searchedClassroom,
+    );
 
     _views[3] = _selectedGroup == 'Группа'
         ? EmptyWelcome(
@@ -79,7 +91,10 @@ class _OverviewPageState extends State<OverviewPage> {
     final _updateAction = IconButton(
         splashRadius: 18,
         onPressed: () async {
-          setState(() => needUpdateTrigger = true);
+          setState(() {
+            needUpdateTrigger = true;
+            _searchedClassroom = '';
+          });
           if (_selectedGroup == 'Группа') await _requestGroups();
         },
         icon: Icon(
@@ -94,6 +109,7 @@ class _OverviewPageState extends State<OverviewPage> {
         options: entryOptions,
         callback: (value) async {
           setState(() {
+            _searchedClassroom = '';
             if (_selectedGroup != value) {
               _selectedGroup = value;
               needUpdateTrigger = true;
@@ -115,6 +131,7 @@ class _OverviewPageState extends State<OverviewPage> {
         : LessonsView(
             key: lessonsKey,
             selectedGroup: _selectedGroup,
+            forTeacher: false,
             dirty: needUpdateTrigger,
             inSearch: false,
             callback: (bool isReplacementSelected, DateTime? lastReplacements,
@@ -124,7 +141,8 @@ class _OverviewPageState extends State<OverviewPage> {
                 _lastReplacements = lastReplacements;
                 _domens = domens;
               });
-            });
+            },
+            onClassroomTap: (classroom) => handleClassroomTap(classroom));
 
     needUpdateTrigger = false;
 
@@ -135,7 +153,9 @@ class _OverviewPageState extends State<OverviewPage> {
           reverse: _searchOption.isEmpty,
           duration: const Duration(milliseconds: 600),
           child: Row(key: ValueKey(_searchOption), children: [
-            _searchOption.isEmpty ? const Text('Поиск') : Text(_searchOption)
+            _searchOption.isEmpty
+                ? const Text('Поиск')
+                : Text(_searchOption.split('~').last)
           ]),
         );
         break;
@@ -192,12 +212,13 @@ class _OverviewPageState extends State<OverviewPage> {
         bottomNavigationBar: BottomNavigationBar(
             currentIndex: _selectedView,
             onTap: (index) => setState(() {
+                  _searchedClassroom = '';
                   if (_inSearchShedule && index == 0 && _selectedView == 0) {
                     _inSearchShedule = false;
                     _searchOption = '';
                   }
 
-                  appbarAnimationDirection = index < _selectedView;
+                  appbarAnimationDirection = _selectedView > index;
                   _selectedView = index;
                 }),
             items: [
@@ -207,7 +228,7 @@ class _OverviewPageState extends State<OverviewPage> {
                     duration: const Duration(milliseconds: 600),
                     child: _inSearchShedule
                         ? Icon(Icons.arrow_downward_rounded,
-                            color: appGlobal.focusColor,
+                            color: app_global.focusColor,
                             key: ValueKey(_inSearchShedule))
                         : Icon(Icons.search_rounded,
                             key: ValueKey(_inSearchShedule)),
@@ -233,8 +254,22 @@ class _OverviewPageState extends State<OverviewPage> {
         ));
   }
 
+  void handleClassroomTap(String classroom) {
+    if (classrooms[classroom] != null) {
+      setState(() {
+        _searchedClassroom = classroom;
+        appbarAnimationDirection = true;
+        _selectedView = 1;
+      });
+    } else {
+      if (!kIsWeb && Platform.isLinux) return;
+      Fluttertoast.showToast(
+          msg: 'Невозможно узнать кабинет или он не находится в техникуме :(');
+    }
+  }
+
   Future<void> _tryLoadCache() async {
-    if (appGlobal.debugMode) {
+    if (app_global.debugMode) {
       setState(() {
         _selectedGroup = 'Тест';
         cachedPinnedGroups = ['ТИП-00', 'ХУу-666'];
@@ -246,10 +281,12 @@ class _OverviewPageState extends State<OverviewPage> {
 
     var gr = (await loadWeekSheduleCache())?.item1 ?? 'Группа';
     var pg = await loadPinnedGroups();
+    var te = await loadPinnedTeachers();
 
     setState(() {
       _selectedGroup = gr;
       cachedPinnedGroups = pg;
+      cachedPinnedTeachers = te;
     });
   }
 
@@ -282,7 +319,7 @@ class EmptyWelcome extends StatelessWidget {
         loading
             ? 'Загружается список групп...'
             : 'Выберите группу, чтобы посмотреть её расписание',
-        style: appGlobal.headerFont,
+        style: app_global.headerFont,
         textAlign: TextAlign.center,
       )),
     );

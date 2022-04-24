@@ -115,6 +115,31 @@ class DatabaseWorker {
     }
   }
 
+  Future<List<Map<String, dynamic>>> getSheduleForTeacher(int teacherID) async {
+    try {
+      var response = <Map<String, dynamic>>[];
+      var result = await _client.rpc('getsheduleforteacher',
+          params: {'teacherid': teacherID}).execute();
+      if (result.hasError) {
+        throw Exception('getSheduleForTeacher: ' + result.error.toString());
+      }
+
+      for (var element in (result.data as List<dynamic>)) {
+        response.add({
+          'down': element['down'],
+          'weekday': element['weekday'],
+          'queue': element['queue'],
+          'subject': element['subject'],
+          'room': element['room']
+        });
+      }
+
+      return response;
+    } catch (e) {
+      throw Exception('getSheduleForTeacher: ' + e.toString());
+    }
+  }
+
   Future<Tuple2<String, List<Tuple4<int, String, String, String>>>>
       getAllMessages({Tuple2<int, DateTime>? from, String? group}) async {
     PostgrestResponse<dynamic> result;

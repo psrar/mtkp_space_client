@@ -7,9 +7,28 @@ import 'package:mtkp/models.dart';
 import 'package:path_provider/path_provider.dart' show getTemporaryDirectory;
 import 'package:tuple/tuple.dart';
 
+const pinnedTeachersCachePath = 'pinnedTeachers.cache';
 const pinnedGroupsCachePath = 'pinnedGroups.cache';
 const sheduleCachePath = 'shedule.cache';
 const replacementsCachePath = 'replacements.cache';
+
+Future savePinnedTeachers(List<Tuple2<int, String>> pinnedTeachers) async {
+  final File file = await getCacheFilePath(pinnedTeachersCachePath);
+  return file.writeAsString(
+      pinnedTeachers.map((e) => e.item1.toString() + '~' + e.item2).join('\n'));
+}
+
+Future<List<Tuple2<int, String>>> loadPinnedTeachers() async {
+  final File file = await getCacheFilePath(pinnedTeachersCachePath);
+  if (file.existsSync()) {
+    return (await file.readAsLines()).map((e) {
+      var i = e.split('~');
+      return Tuple2(int.parse(i[0]), i[1]);
+    }).toList();
+  } else {
+    return [];
+  }
+}
 
 Future savePinnedGroups(List<String> pinnedGroups) async {
   final File file = await getCacheFilePath(pinnedGroupsCachePath);

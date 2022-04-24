@@ -2,7 +2,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:mtkp/database/database_interface.dart';
 import 'package:mtkp/widgets/layout.dart';
 import 'package:flutter/material.dart';
-import 'package:mtkp/main.dart' as appGlobal;
+import 'package:mtkp/main.dart' as app_global;
 
 class GroupsView extends StatefulWidget {
   final List<String> pinnedGroups;
@@ -84,7 +84,7 @@ class _GroupsViewState extends State<GroupsView> {
                           overflow: TextOverflow.fade,
                         ),
                         IconButton(
-                            color: appGlobal.primaryColor,
+                            color: app_global.primaryColor,
                             splashRadius: 20,
                             tooltip: 'Закрепить на экране поиска',
                             onPressed: () {
