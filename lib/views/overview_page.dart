@@ -29,7 +29,7 @@ class OverviewPage extends StatefulWidget {
 class _OverviewPageState extends State<OverviewPage> {
   final PageStorageBucket _bucket = PageStorageBucket();
 
-  int _selectedView = 1;
+  int _selectedView = 2;
   late List<Widget> _views;
   bool appbarAnimationDirection = false;
 

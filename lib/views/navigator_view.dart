@@ -101,7 +101,7 @@ class _NavigatorViewState extends State<NavigatorView>
           child: InteractiveViewer(
             clipBehavior: Clip.none,
             boundaryMargin: const EdgeInsets.all(200),
-            minScale: 1,
+            minScale: 0.5,
             constrained: false,
             child: Stack(children: [
               const Image(

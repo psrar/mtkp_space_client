@@ -234,6 +234,10 @@ class _LessonsViewForTeacherState extends State<LessonsViewForTeacher> {
           if (result[k - 1]['weekday'] == r['weekday']) {
             day = 1;
           }
+
+          while (up.length < 6) {
+            up.add([for (var i = 0; i < 6; i++) null]);
+          }
         }
         for (var l = 1; l < 7; l++) {
           if (r['weekday'] == day && r['queue'] == l) {
