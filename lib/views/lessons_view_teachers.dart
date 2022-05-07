@@ -214,9 +214,9 @@ class _LessonsViewForTeacherState extends State<LessonsViewForTeacher> {
     setState(() {});
   }
 
-  Future<void> _requestShedule(String group) async {
+  Future<void> _requestShedule(String teacher) async {
     try {
-      var id = int.parse(RegExp('^([0-9]+)(?=~)').stringMatch(group)!);
+      var id = int.parse(RegExp('^([0-9]+)(?=~)').stringMatch(teacher)!);
       var result =
           await DatabaseWorker.currentDatabaseWorker!.getSheduleForTeacher(id);
 

@@ -115,7 +115,6 @@ class _OverviewPageState extends State<OverviewPage> {
         : LessonsView(
             key: lessonsKey,
             selectedGroup: _selectedGroup,
-            forTeacher: false,
             inSearch: false,
             callback: (Map<String, String> domens) {
               setState(() {
