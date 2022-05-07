@@ -34,7 +34,6 @@ final testWeekShedule = WeekShedule(Tuple3(testTimetable, [
 ]));
 
 class LessonsViewForTeacher extends StatefulWidget {
-  final bool dirty;
   final String selectedGroup;
   final bool inSearch;
 
@@ -43,7 +42,6 @@ class LessonsViewForTeacher extends StatefulWidget {
   const LessonsViewForTeacher(
       {Key? key,
       required this.selectedGroup,
-      required this.dirty,
       required this.inSearch,
       required this.onClassroomTap})
       : super(key: key);
@@ -54,7 +52,6 @@ class LessonsViewForTeacher extends StatefulWidget {
 
 class _LessonsViewForTeacherState extends State<LessonsViewForTeacher> {
   PageStorageBucket? storage;
-  late bool _dirty;
 
   late int _selectedIndex;
   late int _selectedDay;
@@ -89,9 +86,6 @@ class _LessonsViewForTeacherState extends State<LessonsViewForTeacher> {
 
   @override
   Widget build(BuildContext context) {
-    _dirty = widget.dirty;
-    refresh();
-
     Border border;
     if (_weekShedule == null) {
       border = Border.all(color: app_global.errorColor, width: 2);
@@ -125,13 +119,26 @@ class _LessonsViewForTeacherState extends State<LessonsViewForTeacher> {
         children: <Widget>[
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18.0),
-              child: DatePreview(
-                  selectedDay: _selectedDay,
-                  selectedMonth: _selectedMonth,
-                  replacementSelected: false,
-                  selectedWeek: _selectedWeek,
-                  datePreviewKey: ValueKey(_selectedDay.toString())),
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: DatePreview(
+                        selectedDay: _selectedDay,
+                        selectedMonth: _selectedMonth,
+                        replacementSelected: false,
+                        selectedWeek: _selectedWeek,
+                        datePreviewKey: ValueKey(_selectedDay.toString())),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                      splashRadius: 18,
+                      onPressed: () async => await refresh(),
+                      icon: Icon(Icons.refresh_rounded,
+                          color: Theme.of(context).primaryColorLight)),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 8.0),
@@ -167,7 +174,6 @@ class _LessonsViewForTeacherState extends State<LessonsViewForTeacher> {
       await checkInternetConnection(() async {
         await _requestShedule(widget.selectedGroup);
         saveStateToStorage();
-        _dirty = false;
       });
 
       saveStateToStorage();
@@ -180,15 +186,12 @@ class _LessonsViewForTeacherState extends State<LessonsViewForTeacher> {
   }
 
   Future refresh() async {
-    if (_dirty) {
-      _dirty = false;
-      setState(() => _weekShedule = null);
+    setState(() => _weekShedule = null);
 
-      await checkInternetConnection(() async {
-        await _requestShedule(widget.selectedGroup);
-        saveStateToStorage();
-      });
-    }
+    await checkInternetConnection(() async {
+      await _requestShedule(widget.selectedGroup);
+      saveStateToStorage();
+    });
   }
 
   Future<void> tryLoadCache() async {
@@ -214,7 +217,6 @@ class _LessonsViewForTeacherState extends State<LessonsViewForTeacher> {
   Future<void> _requestShedule(String group) async {
     try {
       var id = int.parse(RegExp('^([0-9]+)(?=~)').stringMatch(group)!);
-      var name = group.split('~')[1];
       var result =
           await DatabaseWorker.currentDatabaseWorker!.getSheduleForTeacher(id);
 
@@ -231,7 +233,7 @@ class _LessonsViewForTeacherState extends State<LessonsViewForTeacher> {
         downFlag = r['down'];
         if (cf && downFlag == true) {
           cf = false;
-          if (result[k - 1]['weekday'] == r['weekday']) {
+          if (result[k - 1]['weekday'] == r['weekday'] || day == 7) {
             day = 1;
           }
 
@@ -241,7 +243,7 @@ class _LessonsViewForTeacherState extends State<LessonsViewForTeacher> {
         }
         for (var l = 1; l < 7; l++) {
           if (r['weekday'] == day && r['queue'] == l) {
-            lessons.add(PairModel(r['subject'], name, r['room']));
+            lessons.add(PairModel(r['subject'], r['group'], r['room']));
             if (k == result.length - 1) break;
             r = result[++k];
           } else {

@@ -28,6 +28,7 @@ class OverviewPage extends StatefulWidget {
 
 class _OverviewPageState extends State<OverviewPage> {
   final PageStorageBucket _bucket = PageStorageBucket();
+  final lessonsKey = const PageStorageKey("Lessons");
 
   int _selectedView = 2;
   late List<Widget> _views;
@@ -35,10 +36,7 @@ class _OverviewPageState extends State<OverviewPage> {
 
   String _selectedGroup = 'Группа';
   List<String> entryOptions = [];
-  bool needUpdateTrigger = false;
 
-  late bool _isReplacementSelected = false;
-  DateTime? _lastReplacements;
   Map<String, String> _domens = {};
 
   bool _inSearchShedule = false;
@@ -61,8 +59,6 @@ class _OverviewPageState extends State<OverviewPage> {
 
   @override
   Widget build(BuildContext context) {
-    var lessonsKey = const PageStorageKey("Lessons");
-
     _views[0] = SearchView(
         key: const PageStorageKey("Search"),
         pinnedGroups: cachedPinnedGroups,
@@ -81,26 +77,14 @@ class _OverviewPageState extends State<OverviewPage> {
 
     _views[3] = _selectedGroup == 'Группа'
         ? EmptyWelcome(
-            loading: entryOptions.isEmpty && _selectedGroup == 'Группа')
+            loading: entryOptions.isEmpty && _selectedGroup == 'Группа',
+            retryAction: () async => await _requestGroups())
         : DomensView(existingPairs: _domens);
     _views[4] = _selectedGroup == 'Группа'
         ? EmptyWelcome(
-            loading: entryOptions.isEmpty && _selectedGroup == 'Группа')
+            loading: entryOptions.isEmpty && _selectedGroup == 'Группа',
+            retryAction: () async => await _requestGroups())
         : const SettingsView();
-
-    final _updateAction = IconButton(
-        splashRadius: 18,
-        onPressed: () async {
-          setState(() {
-            needUpdateTrigger = true;
-            _searchedClassroom = '';
-          });
-          if (_selectedGroup == 'Группа') await _requestGroups();
-        },
-        icon: Icon(
-          Icons.refresh_rounded,
-          color: Theme.of(context).primaryColorLight,
-        ));
 
     final _groupSelectorAction = Padding(
       padding: const EdgeInsets.only(top: 10, bottom: 10, right: 16),
@@ -112,7 +96,6 @@ class _OverviewPageState extends State<OverviewPage> {
             _searchedClassroom = '';
             if (_selectedGroup != value) {
               _selectedGroup = value;
-              needUpdateTrigger = true;
               _selectedView = 2;
             }
           });
@@ -127,24 +110,19 @@ class _OverviewPageState extends State<OverviewPage> {
 
     _views[2] = _selectedGroup == 'Группа'
         ? EmptyWelcome(
-            loading: entryOptions.isEmpty && _selectedGroup == 'Группа')
+            loading: entryOptions.isEmpty && _selectedGroup == 'Группа',
+            retryAction: () async => await _requestGroups())
         : LessonsView(
             key: lessonsKey,
             selectedGroup: _selectedGroup,
             forTeacher: false,
-            dirty: needUpdateTrigger,
             inSearch: false,
-            callback: (bool isReplacementSelected, DateTime? lastReplacements,
-                Map<String, String> domens) {
+            callback: (Map<String, String> domens) {
               setState(() {
-                _isReplacementSelected = isReplacementSelected;
-                _lastReplacements = lastReplacements;
                 _domens = domens;
               });
             },
             onClassroomTap: (classroom) => handleClassroomTap(classroom));
-
-    needUpdateTrigger = false;
 
     late Widget title;
     switch (_selectedView) {
@@ -163,33 +141,7 @@ class _OverviewPageState extends State<OverviewPage> {
         title = Row(children: const [Text('Навигация')]);
         break;
       case 2:
-        title = layout.SharedAxisSwitcher(
-          reverse: !_isReplacementSelected,
-          child: Row(
-            key: ValueKey(_isReplacementSelected),
-            children: [
-              Expanded(
-                child: _isReplacementSelected
-                    ? Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const Text('Замены'),
-                          Text(
-                            _lastReplacements == null
-                                ? 'Данные о заменах устарели'
-                                : 'Обновлено ' +
-                                    SimpleDate.fromDateTime(_lastReplacements!)
-                                        .toSpeech() +
-                                    ' в ${_lastReplacements!.hour.toString().padLeft(2, '0')}:${_lastReplacements!.minute.toString().padLeft(2, '0')}',
-                            style: const TextStyle(fontSize: 10),
-                          ),
-                        ],
-                      )
-                    : const Text('Расписание'),
-              ),
-            ],
-          ),
-        );
+        title = Row(children: const [Text('Расписание')]);
         break;
       case 3:
         title = Row(children: const [Text('Предметы')]);
@@ -207,7 +159,7 @@ class _OverviewPageState extends State<OverviewPage> {
               reverse: appbarAnimationDirection,
               transitionType: SharedAxisTransitionType.horizontal,
               child: Container(key: ValueKey(_selectedView), child: title)),
-          actions: [_updateAction, _groupSelectorAction],
+          actions: [_groupSelectorAction],
         ),
         bottomNavigationBar: BottomNavigationBar(
             currentIndex: _selectedView,
@@ -237,7 +189,7 @@ class _OverviewPageState extends State<OverviewPage> {
               const BottomNavigationBarItem(
                   icon: Icon(Icons.pin_drop_rounded), label: 'Навигация'),
               const BottomNavigationBarItem(
-                  icon: Icon(Icons.view_day_rounded), label: 'Расписание'),
+                  icon: Icon(Icons.book_rounded), label: 'Расписание'),
               const BottomNavigationBarItem(
                   icon: Icon(Icons.school_rounded), label: 'Предметы'),
               const BottomNavigationBarItem(
@@ -255,6 +207,12 @@ class _OverviewPageState extends State<OverviewPage> {
   }
 
   void handleClassroomTap(String classroom) {
+    if (classroom == 'ВЦ') {
+      if (!kIsWeb && Platform.isLinux) return;
+      Fluttertoast.showToast(
+          msg:
+              'Открытых данных о расписании в ВЦ не имеется, проверить расположение невозможно');
+    }
     if (classrooms[classroom] != null) {
       setState(() {
         _searchedClassroom = classroom;
@@ -308,20 +266,37 @@ class _OverviewPageState extends State<OverviewPage> {
 
 class EmptyWelcome extends StatelessWidget {
   final bool loading;
-  const EmptyWelcome({Key? key, required this.loading}) : super(key: key);
+  final void Function() retryAction;
+  const EmptyWelcome(
+      {Key? key, required this.loading, required this.retryAction})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Center(
-          child: Text(
-        loading
-            ? 'Загружается список групп...'
-            : 'Выберите группу, чтобы посмотреть её расписание',
-        style: app_global.headerFont,
-        textAlign: TextAlign.center,
-      )),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            loading
+                ? 'Список групп загружается...'
+                : 'Выберите группу, чтобы посмотреть её расписание',
+            style: app_global.headerFont,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          layout.ColoredTextButton(
+            text: 'Обновить список групп вручную',
+            onPressed: () => retryAction(),
+            foregroundColor: Colors.white,
+            boxColor: app_global.errorColor,
+            splashColor: app_global.errorColor,
+            outlined: true,
+          ),
+        ],
+      ),
     );
   }
 }

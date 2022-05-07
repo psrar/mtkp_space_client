@@ -134,9 +134,7 @@ class _NavigatorViewState extends State<NavigatorView>
                 _animateResetStop();
               }
             },
-            onInteractionEnd: mode == 0
-                ? (_) => _startResetTimer()
-                : (_) => _animateResetInitialize(),
+            onInteractionEnd: (_) => _startResetTimer(),
             transformationController: _transformationController,
           ),
         ),

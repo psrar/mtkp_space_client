@@ -155,15 +155,13 @@ class _SearchViewState extends State<SearchView> {
           ? LessonsViewForTeacher(
               key: const PageStorageKey('Lessons'),
               selectedGroup: _option,
-              dirty: false,
               inSearch: true,
               onClassroomTap: (c) => widget.onClassroomTap(c))
           : LessonsView(
               key: const PageStorageKey('Lessons'),
               selectedGroup: _option,
               forTeacher: _option.contains('~'),
-              callback: (_, __, ___) {},
-              dirty: false,
+              callback: (_) {},
               inSearch: true,
               onClassroomTap: (c) => widget.onClassroomTap(c));
     } else {

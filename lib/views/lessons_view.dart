@@ -12,7 +12,7 @@ import 'package:mtkp/utils/internet_connection_checker.dart';
 import 'package:mtkp/widgets/layout.dart';
 import 'package:mtkp/widgets/shedule.dart';
 import 'package:tuple/tuple.dart';
-import 'package:mtkp/main.dart' as appGlobal;
+import 'package:mtkp/main.dart' as app_global;
 import 'package:mtkp/workers/caching.dart' as caching;
 import 'package:url_launcher/url_launcher.dart' as url_launcher;
 
@@ -38,13 +38,11 @@ final testWeekShedule = WeekShedule(Tuple3(testTimetable, [
 ]));
 
 class LessonsView extends StatefulWidget {
-  final bool dirty;
   final String selectedGroup;
   final bool forTeacher;
   final bool inSearch;
 
-  final void Function(bool isReplacementSelected, DateTime? lastReplacements,
-      Map<String, String> _domens) callback;
+  final void Function(Map<String, String> _domens) callback;
 
   final void Function(String classroom) onClassroomTap;
 
@@ -53,7 +51,6 @@ class LessonsView extends StatefulWidget {
       required this.selectedGroup,
       required this.forTeacher,
       required this.callback,
-      required this.dirty,
       required this.inSearch,
       required this.onClassroomTap})
       : super(key: key);
@@ -64,7 +61,6 @@ class LessonsView extends StatefulWidget {
 
 class _LessonsViewState extends State<LessonsView> {
   PageStorageBucket? storage;
-  late bool _dirty;
 
   late bool _isReplacementSelected = false;
   late int _selectedIndex;
@@ -107,17 +103,14 @@ class _LessonsViewState extends State<LessonsView> {
 
   @override
   Widget build(BuildContext context) {
-    _dirty = widget.dirty;
-    refresh();
-
     Border border;
     if (_weekShedule == null) {
-      border = Border.all(color: appGlobal.errorColor, width: 2);
+      border = Border.all(color: app_global.errorColor, width: 2);
     } else {
       border = Border.all(
           color: _isReplacementSelected
-              ? appGlobal.focusColor
-              : appGlobal.primaryColor,
+              ? app_global.focusColor
+              : app_global.primaryColor,
           width: 1);
 
       if (_isReplacementSelected) {
@@ -165,13 +158,27 @@ class _LessonsViewState extends State<LessonsView> {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: DatePreview(
-                  selectedDay: _selectedDay,
-                  selectedMonth: _selectedMonth,
-                  replacementSelected: _isReplacementSelected,
-                  selectedWeek: _selectedWeek,
-                  datePreviewKey: ValueKey(_isReplacementSelected.toString() +
-                      _selectedDay.toString())),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: DatePreview(
+                        selectedDay: _selectedDay,
+                        selectedMonth: _selectedMonth,
+                        replacementSelected: _isReplacementSelected,
+                        selectedWeek: _selectedWeek,
+                        datePreviewKey: ValueKey(
+                            _isReplacementSelected.toString() +
+                                _selectedDay.toString())),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                      splashRadius: 18,
+                      onPressed: () async => await refresh(),
+                      icon: Icon(Icons.refresh_rounded,
+                          color: Theme.of(context).primaryColorLight)),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -186,14 +193,12 @@ class _LessonsViewState extends State<LessonsView> {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18),
               child: ReplacementSelection(
-                  sheduleColor: appGlobal.primaryColor,
-                  replacementColor: appGlobal.focusColor,
+                  sheduleColor: app_global.primaryColor,
+                  replacementColor: app_global.focusColor,
                   replacementState: _replacementsLoadingState,
                   isReplacementSelected: _isReplacementSelected,
-                  callback: () => setState(() {
-                        _isReplacementSelected = !_isReplacementSelected;
-                        callback();
-                      })),
+                  callback: () => setState(
+                      () => _isReplacementSelected = !_isReplacementSelected)),
             ),
           ),
           const SizedBox(height: 10),
@@ -232,12 +237,10 @@ class _LessonsViewState extends State<LessonsView> {
         await _requestShedule(widget.selectedGroup, widget.forTeacher);
         await _requestReplacements(widget.selectedGroup, 2);
         saveStateToStorage();
-        _dirty = false;
       });
 
       _domens = buildDomensMap(_weekShedule);
       saveStateToStorage();
-      callback();
     } else {
       setState(() {
         _weekShedule = state[1];
@@ -252,13 +255,10 @@ class _LessonsViewState extends State<LessonsView> {
         await checkInternetConnection(() async {
           await _requestShedule(widget.selectedGroup, widget.forTeacher);
           await _requestReplacements(widget.selectedGroup, 2);
-          saveStateToStorage();
-          _dirty = false;
         });
 
         _domens = buildDomensMap(_weekShedule);
         saveStateToStorage();
-        callback();
       }
     }
 
@@ -273,8 +273,17 @@ class _LessonsViewState extends State<LessonsView> {
   }
 
   Future refresh() async {
-    if (_dirty) {
-      _dirty = false;
+    if (_isReplacementSelected) {
+      setState(() {
+        _replacements = Replacements(null);
+        _replacementsLoadingState = 0;
+      });
+
+      await checkInternetConnection(() async {
+        await _requestReplacements(widget.selectedGroup, 2);
+        saveStateToStorage();
+      });
+    } else {
       setState(() {
         _weekShedule = null;
         _replacements = Replacements(null);
@@ -289,7 +298,7 @@ class _LessonsViewState extends State<LessonsView> {
   }
 
   Future<void> tryLoadCache() async {
-    if (appGlobal.debugMode) {
+    if (app_global.debugMode) {
       _weekShedule = testWeekShedule;
       _replacements = Replacements(null);
       _timetable = testTimetable;
@@ -392,7 +401,6 @@ class _LessonsViewState extends State<LessonsView> {
 
           _domens = buildDomensMap(_weekShedule);
           saveStateToStorage();
-          callback();
 
           if (_weekShedule != null) {
             caching.saveWeekshedule(
@@ -459,7 +467,6 @@ class _LessonsViewState extends State<LessonsView> {
 
             _domens = buildDomensMap(_weekShedule);
             saveStateToStorage();
-            callback();
 
             if (_weekShedule != null) {
               caching.saveWeekshedule(
@@ -473,8 +480,6 @@ class _LessonsViewState extends State<LessonsView> {
         }
       }
     }
-
-    callback();
   }
 
   Future<void> _requestReplacements(String group, int rangeFromToday) async {
@@ -523,16 +528,12 @@ class _LessonsViewState extends State<LessonsView> {
           if (_replacements
                   .getReplacement(SimpleDate(_selectedDay, _selectedMonth))
                   ?.item2 !=
-              null) {
-            _isReplacementSelected = true;
-          }
+              null) _isReplacementSelected = true;
         });
       }
       caching.saveReplacements(_replacements, _lastReplacements,
           widget.inSearch ? widget.selectedGroup : '');
     }
-
-    callback();
   }
 
   Tuple2<String, String> resolveDomens(String lessonName) {
@@ -552,9 +553,7 @@ class _LessonsViewState extends State<LessonsView> {
     return Tuple2(lessonName, '');
   }
 
-  void callback() {
-    widget.callback(_isReplacementSelected, _lastReplacements, _domens);
-  }
+  void callback() => widget.callback(_domens);
 
   void saveStateToStorage() {
     if (mounted) {
@@ -571,6 +570,7 @@ class _LessonsViewState extends State<LessonsView> {
           ],
           identifier: widget.key);
     }
+    callback();
   }
 }
 
@@ -597,7 +597,7 @@ class EmptyReplacements extends StatelessWidget {
             ? Column(children: [
                 Text(
                   'Мы загружаем ваши замены',
-                  style: appGlobal.headerFont,
+                  style: app_global.headerFont,
                   textAlign: TextAlign.center,
                 ),
                 const Padding(
@@ -611,7 +611,7 @@ class EmptyReplacements extends StatelessWidget {
                     : selectedReplacement == null
                         ? 'Замен на этот день не обнаружено'
                         : 'Для вашей группы нет замен на этот день',
-                style: appGlobal.headerFont,
+                style: app_global.headerFont,
                 textAlign: TextAlign.center,
               ),
         const SizedBox(height: 12),
@@ -622,8 +622,8 @@ class EmptyReplacements extends StatelessWidget {
               onPressed: () async =>
                   await url_launcher.launch('https://vk.com/mtkp_bmstu'),
               foregroundColor: Colors.white,
-              boxColor: appGlobal.errorColor,
-              splashColor: appGlobal.errorColor,
+              boxColor: app_global.errorColor,
+              splashColor: app_global.errorColor,
               outlined: true,
             ),
             const SizedBox(height: 12),
@@ -631,8 +631,8 @@ class EmptyReplacements extends StatelessWidget {
               text: 'Попробовать снова',
               onPressed: retryAction,
               foregroundColor: Colors.white,
-              boxColor: appGlobal.focusColor,
-              splashColor: appGlobal.focusColor,
+              boxColor: app_global.focusColor,
+              splashColor: app_global.focusColor,
               outlined: true,
             ),
           ],

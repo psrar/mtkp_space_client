@@ -130,7 +130,8 @@ class DatabaseWorker {
           'weekday': element['weekday'],
           'queue': element['queue'],
           'subject': element['subject'],
-          'room': element['room']
+          'room': element['room'],
+          'group': element['groupname']
         });
       }
 
