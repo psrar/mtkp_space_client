@@ -234,8 +234,8 @@ class _NavigatorViewState extends State<NavigatorView>
       mode = 0;
       zeroPointCard = Center(
         child: Text(
-          'Схема кабинетов',
-          style: app_global.giantFont,
+          'Нажмите на номер кабинета в расписании, чтобы увидеть его',
+          style: app_global.headerFont,
         ),
       );
     }

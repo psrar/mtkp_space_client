@@ -233,10 +233,7 @@ class _LessonsViewForTeacherState extends State<LessonsViewForTeacher> {
         downFlag = r['down'];
         if (cf && downFlag == true) {
           cf = false;
-          if (result[k - 1]['weekday'] == r['weekday'] || day == 7) {
-            day = 1;
-          }
-
+          day = 1;
           while (up.length < 6) {
             up.add([for (var i = 0; i < 6; i++) null]);
           }
