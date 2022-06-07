@@ -250,6 +250,9 @@ class _OverviewPageState extends State<OverviewPage> {
   Future<void> _requestGroups() async {
     try {
       await checkInternetConnection(() async {
+        setState(() {
+          entryOptions.clear();
+        });
         await DatabaseWorker.currentDatabaseWorker!
             .getAllGroups()
             .then((value) => setState(() => entryOptions = value));
@@ -280,14 +283,14 @@ class EmptyWelcome extends StatelessWidget {
         children: [
           Text(
             loading
-                ? 'Список групп загружается...'
+                ? 'Пытаемся загрузить список групп...'
                 : 'Выберите группу, чтобы посмотреть её расписание',
             style: app_global.headerFont,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
           layout.ColoredTextButton(
-            text: 'Обновить список групп вручную',
+            text: 'Обновить список вручную, если что-то пошло не так',
             onPressed: () => retryAction(),
             foregroundColor: Colors.white,
             boxColor: app_global.errorColor,

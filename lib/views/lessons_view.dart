@@ -60,6 +60,7 @@ class LessonsView extends StatefulWidget {
 class _LessonsViewState extends State<LessonsView> {
   PageStorageBucket? storage;
 
+  String _selectedGroup = '';
   late bool _isReplacementSelected = false;
   late int _selectedIndex;
   late int _selectedDay;
@@ -101,6 +102,8 @@ class _LessonsViewState extends State<LessonsView> {
 
   @override
   Widget build(BuildContext context) {
+    if (_selectedGroup != widget.selectedGroup) refresh();
+
     Border border;
     if (_weekShedule == null) {
       border = Border.all(color: app_global.errorColor, width: 2);
@@ -131,7 +134,7 @@ class _LessonsViewState extends State<LessonsView> {
           retryAction: () => checkInternetConnection(() {
                 _replacementsLoadingState = 0;
                 setState(() => _replacementsLoadingState = 0);
-                _requestReplacements(widget.selectedGroup, 2);
+                _requestReplacements(_selectedGroup, 2);
               }));
     } else {
       sheduleContentWidget = SheduleContentWidget(
@@ -169,7 +172,7 @@ class _LessonsViewState extends State<LessonsView> {
                             _isReplacementSelected.toString() +
                                 _selectedDay.toString())),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 4),
                   IconButton(
                       splashRadius: 18,
                       onPressed: () async => await refresh(),
@@ -227,13 +230,14 @@ class _LessonsViewState extends State<LessonsView> {
   }
 
   void initialization() async {
+    _selectedGroup = widget.selectedGroup;
     var state = storage?.readState(context, identifier: widget.key);
-    if (state == null || state[0] != widget.selectedGroup) {
+    if (state == null || state[0] != _selectedGroup) {
       await tryLoadCache();
 
       await checkInternetConnection(() async {
-        await _requestShedule(widget.selectedGroup);
-        await _requestReplacements(widget.selectedGroup, 2);
+        await _requestShedule(_selectedGroup);
+        await _requestReplacements(_selectedGroup, 2);
         saveStateToStorage();
       });
 
@@ -251,8 +255,8 @@ class _LessonsViewState extends State<LessonsView> {
 
       if (_replacementsLoadingState == 0) {
         await checkInternetConnection(() async {
-          await _requestShedule(widget.selectedGroup);
-          await _requestReplacements(widget.selectedGroup, 2);
+          await _requestShedule(_selectedGroup);
+          await _requestReplacements(_selectedGroup, 2);
         });
 
         _domens = buildDomensMap(_weekShedule);
@@ -271,6 +275,7 @@ class _LessonsViewState extends State<LessonsView> {
   }
 
   Future refresh() async {
+    _selectedGroup = widget.selectedGroup;
     if (_isReplacementSelected) {
       setState(() {
         _replacements = Replacements(null);
@@ -278,7 +283,7 @@ class _LessonsViewState extends State<LessonsView> {
       });
 
       await checkInternetConnection(() async {
-        await _requestReplacements(widget.selectedGroup, 2);
+        await _requestReplacements(_selectedGroup, 2);
         saveStateToStorage();
       });
     } else {
@@ -288,8 +293,8 @@ class _LessonsViewState extends State<LessonsView> {
       });
 
       await checkInternetConnection(() async {
-        await _requestShedule(widget.selectedGroup);
-        await _requestReplacements(widget.selectedGroup, 2);
+        await _requestShedule(_selectedGroup);
+        await _requestReplacements(_selectedGroup, 2);
         saveStateToStorage();
       });
     }
@@ -305,17 +310,17 @@ class _LessonsViewState extends State<LessonsView> {
     if (kIsWeb) return;
 
     await caching
-        .loadWeekSheduleCache(widget.inSearch ? widget.selectedGroup : '')
+        .loadWeekSheduleCache(widget.inSearch ? _selectedGroup : '')
         .then((value) {
       if (value != null) {
-        // widget.selectedGroup = value.item1;
+        // _selectedGroup = value.item1;
         _timetable = value.item2;
         _weekShedule = value.item3;
       }
     });
 
     await caching
-        .loadReplacementsCache(widget.inSearch ? widget.selectedGroup : '')
+        .loadReplacementsCache(widget.inSearch ? _selectedGroup : '')
         .then((value) {
       if (value == null) return;
       _replacements = value.item2;
@@ -390,7 +395,7 @@ class _LessonsViewState extends State<LessonsView> {
 
             if (_weekShedule != null) {
               caching.saveWeekshedule(
-                  widget.selectedGroup, _weekShedule!, widget.inSearch);
+                  _selectedGroup, _weekShedule!, widget.inSearch);
             }
           });
         });
@@ -452,7 +457,7 @@ class _LessonsViewState extends State<LessonsView> {
         });
       }
       caching.saveReplacements(_replacements, _lastReplacements,
-          widget.inSearch ? widget.selectedGroup : '');
+          widget.inSearch ? _selectedGroup : '');
     }
   }
 
@@ -480,7 +485,7 @@ class _LessonsViewState extends State<LessonsView> {
       storage!.writeState(
           context,
           [
-            widget.selectedGroup,
+            _selectedGroup,
             _weekShedule,
             _replacements,
             _timetable,

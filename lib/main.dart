@@ -8,6 +8,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:mtkp/database/database_interface.dart';
 import 'package:mtkp/settings_model.dart';
 import 'package:mtkp/utils/notification_utils.dart';
+import 'package:mtkp/views/navigator_view.dart';
 import 'package:mtkp/views/overview_page.dart';
 import 'package:mtkp/workers/background_worker.dart';
 

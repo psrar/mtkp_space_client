@@ -7,6 +7,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:mtkp/models.dart';
 import 'package:tuple/tuple.dart';
@@ -56,7 +57,7 @@ class _NavigatorViewState extends State<NavigatorView>
   Widget? twoPointsCard;
 
   late int mode = 0;
-  late PageStorageBucket storage;
+  // late PageStorageBucket storage;
 
   StreamSubscription<dynamic>? _sub;
 
@@ -64,7 +65,7 @@ class _NavigatorViewState extends State<NavigatorView>
   void initState() {
     super.initState();
 
-    storage = PageStorage.of(context)!;
+    // storage = PageStorage.of(context)!;
     // var data = storage.readState(context, identifier: widget.key);
     // if (data == null) {
     _previousOrSingleClassroom = widget.previousOrSingleClassroom;
@@ -134,7 +135,9 @@ class _NavigatorViewState extends State<NavigatorView>
                 _animateResetStop();
               }
             },
-            onInteractionEnd: (_) => _startResetTimer(),
+            onInteractionEnd: (_) => _previousOrSingleClassroom.isEmpty
+                ? _startResetTimer()
+                : _animateResetInitialize(),
             transformationController: _transformationController,
           ),
         ),
@@ -195,11 +198,12 @@ class _NavigatorViewState extends State<NavigatorView>
             s = 'Не в здании';
         }
 
-        singlePointCard = Stack(children: [
+        singlePointCard = Row(children: [
           Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(s, style: app_global.giantFont),
+              AutoSizeText(s, style: app_global.headerFont),
               Row(
                 children: [
                   const Icon(
@@ -209,31 +213,37 @@ class _NavigatorViewState extends State<NavigatorView>
                   ),
                   Text(
                     _previousOrSingleClassroom,
-                    style: app_global.giantFont,
+                    style: app_global.headerFont,
                   ),
                 ],
-              )
+              ),
             ],
           ),
-          Align(
+          Expanded(
+            child: Align(
               alignment: Alignment.topRight,
               child: IconButton(
+                  padding: EdgeInsets.zero,
                   color: app_global.primaryColor,
                   hoverColor: app_global.errorColor,
                   iconSize: 36,
                   onPressed: () {
-                    storage.writeState(context, ['', ''],
-                        identifier: widget.key);
+                    // storage.writeState(context, ['', ''],
+                    //     identifier: widget.key);
+                    _previousOrSingleClassroom = '';
+                    _nextClassroom = '';
                     _animateResetStop();
                     _animateResetInitialize(true);
                   },
-                  icon: const Icon(Icons.cancel))),
+                  icon: const Icon(Icons.cancel)),
+            ),
+          ),
         ]);
       } else {}
     } else {
       mode = 0;
       zeroPointCard = Center(
-        child: Text(
+        child: AutoSizeText(
           'Нажмите на номер кабинета в расписании, чтобы увидеть его',
           style: app_global.headerFont,
         ),
@@ -259,7 +269,7 @@ class _NavigatorViewState extends State<NavigatorView>
 
   /// Start resetting the animation
   void _animateResetInitialize([bool fullReset = false]) {
-    var t;
+    Matrix4 t;
 
     if (!fullReset && mode != 0) {
       if (mode == 2) {
