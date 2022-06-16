@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:mtkp/main.dart' as appGlobal;
+import 'package:mtkp/main.dart' as app_global;
 import 'package:mtkp/widgets/layout.dart';
 import 'package:mtkp/workers/background_worker.dart' as bw;
 import 'package:mtkp/settings_model.dart';
@@ -17,7 +17,7 @@ class SettingsView extends StatefulWidget {
 
 class _SettingsViewState extends State<SettingsView> {
   bool _isBackgroundWorkEnabled =
-      appGlobal.settings['background_enabled'] ?? false;
+      app_global.settings['background_enabled'] ?? false;
 
   @override
   Widget build(BuildContext context) {
@@ -78,8 +78,11 @@ class _SettingsViewState extends State<SettingsView> {
                                     style: TextStyle(fontSize: 14)),
                                 const SizedBox(height: 18),
                                 InkWell(
-                                    onTap: () async => await url_launcher.launch(
-                                        'https://intercom.help/Wheely-help/ru/articles/4294782-%D0%BA%D0%B0%D0%BA-%D0%BE%D1%82%D0%BA%D0%BB%D1%8E%D1%87%D0%B8%D1%82%D1%8C-%D0%BE%D0%BF%D1%82%D0%B8%D0%BC%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8E-%D1%80%D0%B0%D1%81%D1%85%D0%BE%D0%B4%D0%B0-%D0%B1%D0%B0%D1%82%D0%B0%D1%80%D0%B5%D0%B8-%D0%BD%D0%B0-android-%D1%83%D1%81%D1%82%D1%80%D0%BE%D0%B9%D1%81%D1%82%D0%B2%D0%B0%D1%85'),
+                                    onTap: () async => await url_launcher.launchUrl(
+                                        Uri.parse(
+                                            'https://intercom.help/Wheely-help/ru/articles/4294782-%D0%BA%D0%B0%D0%BA-%D0%BE%D1%82%D0%BA%D0%BB%D1%8E%D1%87%D0%B8%D1%82%D1%8C-%D0%BE%D0%BF%D1%82%D0%B8%D0%BC%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8E-%D1%80%D0%B0%D1%81%D1%85%D0%BE%D0%B4%D0%B0-%D0%B1%D0%B0%D1%82%D0%B0%D1%80%D0%B5%D0%B8-%D0%BD%D0%B0-android-%D1%83%D1%81%D1%82%D1%80%D0%BE%D0%B9%D1%81%D1%82%D0%B2%D0%B0%D1%85'),
+                                        mode: url_launcher
+                                            .LaunchMode.platformDefault),
                                     child: const Padding(
                                       padding: EdgeInsets.all(8.0),
                                       child: Text(
@@ -90,8 +93,12 @@ class _SettingsViewState extends State<SettingsView> {
                                     )),
                                 const SizedBox(height: 8),
                                 InkWell(
-                                    onTap: () async => await url_launcher
-                                        .launch('https://dontkillmyapp.com/'),
+                                    onTap: () async =>
+                                        await url_launcher.launchUrl(
+                                            Uri.parse(
+                                                'https://dontkillmyapp.com/'),
+                                            mode: url_launcher
+                                                .LaunchMode.platformDefault),
                                     child: const Padding(
                                       padding: EdgeInsets.all(8.0),
                                       child: Text(
@@ -118,14 +125,14 @@ class _SettingsViewState extends State<SettingsView> {
                 text:
                     'Разрешить приложению работать в фоне для получения уведомлений',
                 foregroundColor: Colors.white,
-                boxColor: appGlobal.primaryColor),
+                boxColor: app_global.primaryColor),
             const SizedBox(height: 18),
             AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               decoration: BoxDecoration(
                   color: _isBackgroundWorkEnabled
                       ? Colors.green
-                      : appGlobal.errorColor,
+                      : app_global.errorColor,
                   borderRadius: BorderRadius.circular(8)),
               child: Material(
                 color: Colors.transparent,

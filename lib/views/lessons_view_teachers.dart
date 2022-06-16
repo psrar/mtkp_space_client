@@ -11,6 +11,7 @@ import 'package:mtkp/widgets/shedule.dart';
 import 'package:tuple/tuple.dart';
 import 'package:mtkp/main.dart' as app_global;
 import 'package:mtkp/workers/caching.dart' as caching;
+import 'package:url_launcher/url_launcher.dart';
 
 final testTimetable = Timetable(
     Time('9:00', '10:30'),
@@ -59,6 +60,8 @@ class _LessonsViewForTeacherState extends State<LessonsViewForTeacher> {
   late int _selectedWeek;
   late DateTime now;
 
+  bool failed = false;
+
   WeekShedule? _weekShedule;
   List<PairModel?>? dayShedule;
   Timetable _timetable = Timetable.empty();
@@ -86,6 +89,42 @@ class _LessonsViewForTeacherState extends State<LessonsViewForTeacher> {
 
   @override
   Widget build(BuildContext context) {
+    if (failed) {
+      return Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Icon(Icons.sentiment_dissatisfied_rounded,
+                  color: app_global.accessColor, size: 74),
+              Text(
+                'Не получается посмотреть расписание',
+                style: app_global.headerFont,
+                textAlign: TextAlign.center,
+              ),
+              Text(
+                'Вероятнее всего, замешаны потусторонние силы или особенности парсинга журнала',
+                style: app_global.primeFont,
+                textAlign: TextAlign.center,
+              ),
+              ColoredTextButton(
+                text: 'Проверить самостоятельно',
+                onPressed: () async => await launchUrl(
+                    Uri.parse('https://vk.com/mtkp_bmstu'),
+                    mode: LaunchMode.externalApplication),
+                foregroundColor: Colors.white,
+                boxColor: app_global.accessColor,
+                splashColor: app_global.accessColor,
+                outlined: true,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     Border border;
     if (_weekShedule == null) {
       border = Border.all(color: app_global.errorColor, width: 2);
@@ -180,6 +219,11 @@ class _LessonsViewForTeacherState extends State<LessonsViewForTeacher> {
     } else {
       setState(() {
         _weekShedule = state[1];
+        if (_weekShedule == null) {
+          failed = true;
+          return;
+        }
+
         _timetable = _weekShedule!.weekLessons.item1;
       });
     }
@@ -219,6 +263,11 @@ class _LessonsViewForTeacherState extends State<LessonsViewForTeacher> {
       var id = int.parse(RegExp('^([0-9]+)(?=~)').stringMatch(teacher)!);
       var result =
           await DatabaseWorker.currentDatabaseWorker!.getSheduleForTeacher(id);
+
+      if (result.isEmpty) {
+        setState(() => failed = true);
+        return;
+      }
 
       //upcycle
       var up = <List<PairModel?>>[];
@@ -277,6 +326,7 @@ class _LessonsViewForTeacherState extends State<LessonsViewForTeacher> {
         if (mounted) {
           setState(() {
             _weekShedule = WeekShedule(Tuple3(_timetable, up, down));
+            failed = false;
           });
         }
 
@@ -289,6 +339,7 @@ class _LessonsViewForTeacherState extends State<LessonsViewForTeacher> {
       });
     } catch (e) {
       log('Ошибка при парсинге расписания для преподавателей: ' + e.toString());
+      setState(() => failed = true);
     }
   }
 

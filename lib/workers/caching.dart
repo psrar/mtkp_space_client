@@ -4,7 +4,8 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:mtkp/models.dart';
-import 'package:path_provider/path_provider.dart' show getTemporaryDirectory;
+import 'package:path_provider/path_provider.dart'
+    show getApplicationDocumentsDirectory;
 import 'package:tuple/tuple.dart';
 
 const pinnedTeachersCachePath = 'pinnedTeachers.cache';
@@ -132,6 +133,6 @@ Future<Tuple2<DateTime?, Replacements>?> loadReplacementsCache(
 }
 
 Future<File> getCacheFilePath(String fileName) async {
-  final directory = await getTemporaryDirectory();
+  final directory = await getApplicationDocumentsDirectory();
   return File(directory.path + '/$fileName');
 }

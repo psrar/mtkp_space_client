@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -544,8 +543,9 @@ class EmptyReplacements extends StatelessWidget {
           children: [
             ColoredTextButton(
               text: 'Проверить самостоятельно',
-              onPressed: () async =>
-                  await url_launcher.launch('https://vk.com/mtkp_bmstu'),
+              onPressed: () async => await url_launcher.launchUrl(
+                  Uri.parse('https://vk.com/mtkp_bmstu'),
+                  mode: url_launcher.LaunchMode.externalApplication),
               foregroundColor: Colors.white,
               boxColor: app_global.errorColor,
               splashColor: app_global.errorColor,

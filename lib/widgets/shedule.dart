@@ -35,7 +35,9 @@ class SheduleContentWidget extends StatelessWidget {
             ),
             ColoredTextButton(
               text: 'Проверить самостоятельно',
-              onPressed: () async => await launch('https://vk.com/mtkp_bmstu'),
+              onPressed: () async => await launchUrl(
+                  Uri.parse('https://vk.com/mtkp_bmstu'),
+                  mode: LaunchMode.externalApplication),
               foregroundColor: Colors.white,
               boxColor: app_global.accessColor,
               splashColor: app_global.accessColor,

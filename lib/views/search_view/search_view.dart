@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mtkp/main.dart';
+import 'package:mtkp/main.dart' as app_global;
 import 'package:mtkp/views/lessons_view.dart';
 import 'package:mtkp/views/lessons_view_teachers.dart';
 import 'package:mtkp/views/search_view/groups_view.dart';
@@ -67,7 +67,11 @@ class _SearchViewState extends State<SearchView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              Text('Преподаватели', style: giantFont),
+              Text('Преподаватели', style: app_global.giantFont),
+              Text(
+                  'Из-за особенностей парсинга журнала, правильная работа не может быть гарантирована',
+                  style: app_global.primeFont
+                      .copyWith(color: app_global.errorColor)),
               const SizedBox(height: 16),
               for (var item in _pinnedTeachers)
                 Padding(
@@ -82,7 +86,7 @@ class _SearchViewState extends State<SearchView> {
                       },
                       text: item.item2,
                       foregroundColor: Colors.white,
-                      boxColor: primaryColor),
+                      boxColor: app_global.primaryColor),
                 ),
               ColoredTextButton(
                 onPressed: () => Navigator.of(context).push(MaterialPageRoute(
@@ -101,13 +105,13 @@ class _SearchViewState extends State<SearchView> {
                         }))),
                 text: 'Найти или закрепить преподавателя',
                 foregroundColor: Colors.white,
-                boxColor: primaryColor,
+                boxColor: app_global.primaryColor,
                 outlined: true,
               ),
               const SizedBox(height: 30),
               const Divider(color: Colors.grey, thickness: 1, height: 0),
               const SizedBox(height: 18),
-              Text('Группы', style: giantFont),
+              Text('Группы', style: app_global.giantFont),
               const SizedBox(height: 18),
               for (var item in _pinnedGroups)
                 Padding(
@@ -121,7 +125,7 @@ class _SearchViewState extends State<SearchView> {
                       },
                       text: item,
                       foregroundColor: Colors.white,
-                      boxColor: primaryColor),
+                      boxColor: app_global.primaryColor),
                 ),
               ColoredTextButton(
                 onPressed: () => Navigator.of(context).push(MaterialPageRoute(
@@ -140,7 +144,7 @@ class _SearchViewState extends State<SearchView> {
                         }))),
                 text: 'Найти или закрепить группу',
                 foregroundColor: Colors.white,
-                boxColor: primaryColor,
+                boxColor: app_global.primaryColor,
                 outlined: true,
               ),
             ],
