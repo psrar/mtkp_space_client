@@ -270,41 +270,17 @@ class _LessonsViewForTeacherState extends State<LessonsViewForTeacher> {
       }
 
       //upcycle
-      var up = <List<PairModel?>>[];
-      var down = <List<PairModel?>>[];
-      var day = 1;
-      bool cf = true;
-      var downFlag = false;
-      for (var k = 0; k < result.length;) {
-        var lessons = <PairModel?>[];
-        var r = result[k];
-
-        downFlag = r['down'];
-        if (cf && downFlag == true) {
-          cf = false;
-          day = 1;
-          while (up.length < 6) {
-            up.add([for (var i = 0; i < 6; i++) null]);
-          }
-        }
-        for (var l = 1; l < 7; l++) {
-          if (r['weekday'] == day && r['queue'] == l) {
-            lessons.add(PairModel(r['subject'], r['group'], r['room']));
-            if (k == result.length - 1) break;
-            r = result[++k];
-          } else {
-            lessons.add(null);
-          }
-        }
-        while (lessons.length < 6) {
-          lessons.add(null);
-        }
-        day++;
-        if (downFlag) {
-          down.add(lessons);
-          if (down.length == 6) break;
+      var up = List.generate(6, (i) => List<PairModel?>.filled(6, null));
+      var down = List.generate(6, (i) => List<PairModel?>.filled(6, null));
+      for (var k = 0; k < result.length; k++) {
+        var lesson = result[k];
+        var isDown = lesson['down'];
+        if (isDown) {
+          down[lesson['weekday'] - 1][lesson['queue'] - 1] =
+              PairModel(lesson['subject'], lesson['group'], lesson['room']);
         } else {
-          up.add(lessons);
+          up[lesson['weekday'] - 1][lesson['queue'] - 1] =
+              PairModel(lesson['subject'], lesson['group'], lesson['room']);
         }
       }
 
