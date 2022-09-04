@@ -206,8 +206,9 @@ class _OverviewPageState extends State<OverviewPage> {
   }
 
   void handleClassroomTap(String classroom) {
+    if (!kIsWeb && Platform.isLinux) return;
+
     if (classroom == 'ВЦ') {
-      if (!kIsWeb && Platform.isLinux) return;
       Fluttertoast.showToast(
           msg:
               'Открытых данных о расписании в ВЦ не имеется, проверить расположение невозможно');
@@ -219,9 +220,8 @@ class _OverviewPageState extends State<OverviewPage> {
         _selectedView = 1;
       });
     } else {
-      if (!kIsWeb && Platform.isLinux) return;
       Fluttertoast.showToast(
-          msg: 'Невозможно узнать кабинет или он не находится в техникуме :(');
+          msg: 'Невозможно узнать кабинет или он не находится в техникуме');
     }
   }
 
@@ -234,11 +234,9 @@ class _OverviewPageState extends State<OverviewPage> {
       return;
     }
 
-    if (kIsWeb) return;
-
-    var gr = (await loadWeekSheduleCache())?.item1 ?? 'Группа';
-    var pg = await loadPinnedGroups();
+    var gr = (await loadWeekShedule())?.item1 ?? 'Группа';
     var te = await loadPinnedTeachers();
+    var pg = await loadPinnedGroups();
 
     setState(() {
       _selectedGroup = gr;

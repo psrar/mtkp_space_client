@@ -1,7 +1,3 @@
-import 'dart:developer';
-import 'dart:io';
-
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 const InitializationSettings _initializationSettings = InitializationSettings(
@@ -42,12 +38,8 @@ class NotificationHandler {
   }
 
   void initializePlugin() async {
-    if (!kIsWeb && !Platform.isLinux) {
-      await _flutterLocalNotificationsPlugin.initialize(_initializationSettings,
-          onSelectNotification: (payload) => {});
-    } else {
-      log('kIsWeb, notifications disabled.');
-    }
+    await _flutterLocalNotificationsPlugin.initialize(_initializationSettings,
+        onSelectNotification: (payload) => {});
   }
 
   Future showNotification(String? title, String? body) async {

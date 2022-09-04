@@ -18,6 +18,8 @@ const double markerSize = 32;
 const double markerLeftOffset = -markerSize / 2;
 const double markerTopOffset = -markerSize / 1.05;
 
+const defaultScaling = 1.1;
+
 class NavigatorView extends StatefulWidget {
   final String previousOrSingleClassroom;
   final String nextClassroom;
@@ -88,7 +90,7 @@ class _NavigatorViewState extends State<NavigatorView>
     realHeight = realWidth * imageDimensions.item2 / imageDimensions.item1;
     _transformationController.value =
         Matrix4.identity().scaled(realWidth / imageDimensions.item1);
-    _animateResetInitialize();
+    _animateResetInitialize(false);
   }
 
   @override
@@ -136,8 +138,8 @@ class _NavigatorViewState extends State<NavigatorView>
               }
             },
             onInteractionEnd: (_) => _previousOrSingleClassroom.isEmpty
-                ? _startResetTimer()
-                : _animateResetInitialize(),
+                ? _startResetTimer(true)
+                : _startResetTimer(false),
             transformationController: _transformationController,
           ),
         ),
@@ -159,13 +161,13 @@ class _NavigatorViewState extends State<NavigatorView>
   }
 
   Future resettingTimer() async {
-    await Future.delayed(const Duration(seconds: 2));
+    await Future.delayed(const Duration(seconds: 1));
   }
 
-  void _startResetTimer() {
+  void _startResetTimer(bool fullReset) {
     _sub = resettingTimer()
         .asStream()
-        .listen((data) => _animateResetInitialize(true));
+        .listen((data) => _animateResetInitialize(fullReset));
   }
 
   void buildInformationCard() {
@@ -268,7 +270,7 @@ class _NavigatorViewState extends State<NavigatorView>
   }
 
   /// Start resetting the animation
-  void _animateResetInitialize([bool fullReset = false]) {
+  void _animateResetInitialize(bool fullReset) {
     Matrix4 t;
 
     if (!fullReset && mode != 0) {
@@ -299,7 +301,7 @@ class _NavigatorViewState extends State<NavigatorView>
             oldMarkerTop! +
             markerTopOffset;
 
-        scaling = 1.2;
+        scaling = defaultScaling;
       }
 
       //Sets zoom origins in center and scales

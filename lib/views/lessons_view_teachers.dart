@@ -1,6 +1,5 @@
 import 'dart:developer';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:jiffy/jiffy.dart';
 import 'package:mtkp/database/database_interface.dart';
@@ -240,22 +239,23 @@ class _LessonsViewForTeacherState extends State<LessonsViewForTeacher> {
 
   Future<void> tryLoadCache() async {
     if (app_global.debugMode) {
-      _weekShedule = testWeekShedule;
-      _timetable = testTimetable;
+      setState(() {
+        _weekShedule = testWeekShedule;
+        _timetable = testTimetable;
+      });
       return;
     }
-    if (kIsWeb) return;
 
     await caching
-        .loadWeekSheduleCache(widget.inSearch ? widget.selectedGroup : '')
+        .loadWeekShedule(widget.inSearch ? widget.selectedGroup : '')
         .then((value) {
       if (value != null) {
-        _timetable = value.item2;
-        _weekShedule = value.item3;
+        setState(() {
+          _timetable = value.item2;
+          _weekShedule = value.item3;
+        });
       }
     });
-
-    setState(() {});
   }
 
   Future<void> _requestShedule(String teacher) async {

@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:jiffy/jiffy.dart';
@@ -306,20 +305,19 @@ class _LessonsViewState extends State<LessonsView> {
       _timetable = testTimetable;
       return;
     }
-    if (kIsWeb) return;
 
     await caching
-        .loadWeekSheduleCache(widget.inSearch ? _selectedGroup : '')
+        .loadWeekShedule(widget.inSearch ? _selectedGroup : '')
         .then((value) {
       if (value != null) {
-        // _selectedGroup = value.item1;
+        _selectedGroup = value.item1;
         _timetable = value.item2;
         _weekShedule = value.item3;
       }
     });
 
     await caching
-        .loadReplacementsCache(widget.inSearch ? _selectedGroup : '')
+        .loadReplacements(widget.inSearch ? _selectedGroup : '')
         .then((value) {
       if (value == null) return;
       _replacements = value.item2;

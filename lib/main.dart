@@ -17,12 +17,10 @@ void main() async {
 
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
-  if (!kIsWeb && !Platform.isLinux) {
+  if (!kIsWeb && Platform.isAndroid) {
     NotificationHandler().initializePlugin();
     initAlarmManager();
-  }
 
-  if (!kIsWeb && !Platform.isLinux) {
     loadSettings().then((value) {
       settings = value;
       if (value['background_enabled']) startShedule();
