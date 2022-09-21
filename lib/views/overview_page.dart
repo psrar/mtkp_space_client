@@ -212,8 +212,9 @@ class _OverviewPageState extends State<OverviewPage> {
       Fluttertoast.showToast(
           msg:
               'Открытых данных о расписании в ВЦ не имеется, проверить расположение невозможно');
+      return;
     }
-    if (classrooms[classroom] != null) {
+    if (classrooms[classroom.toLowerCase()] != null) {
       setState(() {
         _searchedClassroom = classroom;
         appbarAnimationDirection = true;

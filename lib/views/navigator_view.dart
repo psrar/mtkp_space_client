@@ -37,7 +37,7 @@ class _NavigatorViewState extends State<NavigatorView>
   final _transformationController = TransformationController();
 
   late String _previousOrSingleClassroom;
-  late String _nextClassroom;
+  // late String _nextClassroom;
 
   double? oldMarkerLeft;
   double? oldMarkerTop;
@@ -71,7 +71,7 @@ class _NavigatorViewState extends State<NavigatorView>
     // var data = storage.readState(context, identifier: widget.key);
     // if (data == null) {
     _previousOrSingleClassroom = widget.previousOrSingleClassroom;
-    _nextClassroom = widget.nextClassroom;
+    // _nextClassroom = widget.nextClassroom;
     // } else {
     //   _previousOrSingleClassroom = data[0];
     //   _nextClassroom = data[1];
@@ -233,7 +233,7 @@ class _NavigatorViewState extends State<NavigatorView>
                     // storage.writeState(context, ['', ''],
                     //     identifier: widget.key);
                     _previousOrSingleClassroom = '';
-                    _nextClassroom = '';
+                    // _nextClassroom = '';
                     _animateResetStop();
                     _animateResetInitialize(true);
                   },

@@ -179,7 +179,7 @@ class _SettingsViewState extends State<SettingsView> {
               children: const [
                 Expanded(
                   child: Text(
-                    'Приложение разработано Павлом Симоняном в 2022 году',
+                    'Приложение разработано студентом Павлом Симоняном в 2022 году',
                     textAlign: TextAlign.center,
                     overflow: TextOverflow.ellipsis,
                     maxLines: 2,

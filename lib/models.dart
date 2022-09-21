@@ -8,6 +8,7 @@ part 'models.g.dart';
 const Map<String, Tuple2<double, double>> classrooms = {
   //Первый этаж
   '101': Tuple2(305, 826),
+  'библиотека': Tuple2(305, 826),
   '102': Tuple2(337, 866),
   '104': Tuple2(337, 882),
   '105': Tuple2(337, 929),
@@ -23,6 +24,12 @@ const Map<String, Tuple2<double, double>> classrooms = {
   '117': Tuple2(64, 778),
   '118': Tuple2(127, 804),
   '119': Tuple2(130, 777),
+  '122': Tuple2(129, 641),
+  '123': Tuple2(177, 641),
+  '124': Tuple2(227, 641),
+  '126': Tuple2(243, 706),
+  '130': Tuple2(187, 690),
+  '131': Tuple2(118, 703),
 
   //Второй этаж
   '200': Tuple2(664, 761),
@@ -102,7 +109,7 @@ const Map<String, Tuple2<double, double>> classrooms = {
   '409': Tuple2(670, 390),
   '410': Tuple2(678, 455),
   '411': Tuple2(637, 455),
-  'Актовый зал': Tuple2(571, 379),
+  'актовый зал': Tuple2(571, 379),
   '414': Tuple2(513, 379),
   '415': Tuple2(504, 455),
   '416': Tuple2(464, 455),
