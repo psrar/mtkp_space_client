@@ -56,7 +56,10 @@ class _GroupsViewState extends State<GroupsView> {
         ],
       ),
       body: _groups.isEmpty
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator(
+              color: app_global.accessColor,
+            ))
           : ListView.separated(
               itemBuilder: (context, index) {
                 bool pinned = false;

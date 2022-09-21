@@ -148,7 +148,10 @@ class _LessonsViewForTeacherState extends State<LessonsViewForTeacher> {
           borderRadius: BorderRadius.circular(8),
         ),
         child: _weekShedule == null
-            ? const Center(child: CircularProgressIndicator())
+            ? const Center(
+                child: CircularProgressIndicator(
+                color: app_global.accessColor,
+              ))
             : sheduleContentWidget);
 
     return Padding(

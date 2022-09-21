@@ -17,15 +17,14 @@ void main() async {
 
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
-  if (!kIsWeb && Platform.isAndroid) {
-    NotificationHandler().initializePlugin();
-    initAlarmManager();
-
-    loadSettings().then((value) {
-      settings = value;
+  loadSettings().then((value) {
+    settings = value;
+    if (!kIsWeb && Platform.isAndroid) {
+      NotificationHandler().initializePlugin();
+      initAlarmManager();
       if (value['background_enabled']) startShedule();
-    });
-  }
+    }
+  });
 
   runApp(const MyApp());
 }

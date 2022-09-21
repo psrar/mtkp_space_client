@@ -147,7 +147,10 @@ class _LessonsViewState extends State<LessonsView> {
           borderRadius: BorderRadius.circular(8),
         ),
         child: _weekShedule == null
-            ? const Center(child: CircularProgressIndicator())
+            ? const Center(
+                child: CircularProgressIndicator(
+                color: app_global.accessColor,
+              ))
             : sheduleContentWidget);
 
     return Padding(
@@ -427,13 +430,15 @@ class _LessonsViewState extends State<LessonsView> {
           //     'Не удалось получить замены. Узнайте их вручную.\n' + res.item1!,
           //     6000);
         } else if (res.item2 != null) {
-          for (var pairs in res.item2!.values) {
-            if (pairs != null) {
-              for (var pair in pairs) {
-                if (pair != null) {
-                  var resolving = resolveDomens(pair.name);
-                  pair.name = resolving.item1;
-                  pair.teacherName = resolving.item2;
+          if (app_global.settings['resolve_domens'] ?? false) {
+            for (var pairs in res.item2!.values) {
+              if (pairs != null) {
+                for (var pair in pairs) {
+                  if (pair != null) {
+                    var resolving = resolveDomens(pair.name);
+                    pair.name = resolving.item1;
+                    pair.teacherName = resolving.item2;
+                  }
                 }
               }
             }
@@ -524,7 +529,9 @@ class EmptyReplacements extends StatelessWidget {
                 ),
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8.0),
-                  child: LinearProgressIndicator(),
+                  child: CircularProgressIndicator(
+                    color: app_global.accessColor,
+                  ),
                 ),
               ])
             : Text(

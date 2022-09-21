@@ -2,6 +2,7 @@ import 'dart:developer';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:mtkp/database/database_interface.dart';
+import 'package:mtkp/main.dart' as app_global;
 import 'package:mtkp/widgets/layout.dart';
 import 'package:flutter/material.dart';
 import 'package:tuple/tuple.dart';
@@ -70,7 +71,10 @@ class _SubjectsViewState extends State<SubjectsView> {
         ],
       ),
       body: _subjects == null
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator(
+              color: app_global.accessColor,
+            ))
           : ListView.separated(
               itemBuilder: (context, index) {
                 return InkWell(

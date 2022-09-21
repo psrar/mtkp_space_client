@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -18,6 +20,8 @@ class SettingsView extends StatefulWidget {
 class _SettingsViewState extends State<SettingsView> {
   bool _isBackgroundWorkEnabled =
       app_global.settings['background_enabled'] ?? false;
+  bool _isDomensResolvingEnabled =
+      app_global.settings['resolve_domens'] ?? false;
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +36,7 @@ class _SettingsViewState extends State<SettingsView> {
               ColoredTextButton(
                   onPressed: () async {
                     try {
-                      if (kIsWeb) {
+                      if (kIsWeb || !Platform.isAndroid) {
                         Fluttertoast.showToast(
                             msg: 'Доступно только на Android');
                       } else {
@@ -146,24 +150,63 @@ class _SettingsViewState extends State<SettingsView> {
                   borderRadius: BorderRadius.circular(8),
                   child: ColoredTextButton(
                     onPressed: () async {
-                      if (kIsWeb) {
+                      if (kIsWeb || !Platform.isAndroid) {
                         Fluttertoast.showToast(
                             msg: 'Доступно только на Android');
                       } else {
-                        if (_isBackgroundWorkEnabled) {
-                          bw.stopShedule();
-                          setState(() => _isBackgroundWorkEnabled = false);
-                        } else {
-                          bw.startShedule();
-                          setState(() => _isBackgroundWorkEnabled = true);
-                        }
-                        await saveSettings(
-                            {'background_enabled': _isBackgroundWorkEnabled});
+                        setState(() => _isBackgroundWorkEnabled =
+                            !_isBackgroundWorkEnabled);
+                        _isBackgroundWorkEnabled
+                            ? bw.startShedule()
+                            : bw.stopShedule();
+
+                        app_global.settings['background_enabled'] =
+                            _isBackgroundWorkEnabled;
+
+                        await saveSettings({
+                          'background_enabled': _isBackgroundWorkEnabled,
+                          'resolve_domens': _isDomensResolvingEnabled
+                        });
                       }
                     },
                     text: _isBackgroundWorkEnabled
                         ? 'Фоновая проверка замен включена'
                         : 'Включить фоновую проверку замен',
+                    boxColor: Colors.transparent,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                  'Рекомендуем выключить эту опцию 4 курсам\nДля применения изменений требуется обновить расписание, используя кнопку в верхнем углу'),
+              const SizedBox(height: 4),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                decoration: BoxDecoration(
+                    color: _isDomensResolvingEnabled
+                        ? Colors.green
+                        : app_global.errorColor,
+                    borderRadius: BorderRadius.circular(8)),
+                child: Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  child: ColoredTextButton(
+                    onPressed: () async {
+                      setState(() {
+                        _isDomensResolvingEnabled = !_isDomensResolvingEnabled;
+                      });
+                      app_global.settings['resolve_domens'] =
+                          _isDomensResolvingEnabled;
+
+                      await saveSettings({
+                        'background_enabled': _isBackgroundWorkEnabled,
+                        'resolve_domens': _isDomensResolvingEnabled
+                      });
+                    },
+                    text: _isDomensResolvingEnabled
+                        ? 'Подстановка названий пар и преподавателей включена'
+                        : 'Подстановка названий пар и преподавателей выключена',
                     boxColor: Colors.transparent,
                     foregroundColor: Colors.white,
                   ),
